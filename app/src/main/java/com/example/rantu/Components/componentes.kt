@@ -97,7 +97,8 @@ fun RoomCard(
     imageRes: Int,
     title: String,
     description: String,
-    price: String
+    price: String,
+    onViewMoreClick: () -> Unit // <-- AÑADE ESTE PARÁMETRO
 ) {
     Card(
         modifier = Modifier
@@ -121,11 +122,13 @@ fun RoomCard(
                     StatusChip(text = "Disponible")
                 }
             }
+
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(title, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(description, fontSize = 14.sp, color = Color.Black)
                 Spacer(modifier = Modifier.height(16.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -135,8 +138,14 @@ fun RoomCard(
                         Text(price, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6))
                         Text("por mes", fontSize = 12.sp, color = Color.Black)
                     }
+                    //if (isAvailable) {
+                    //    StatusChip("Disponible")
+                    //} else {
+                    //    StatusChip("No disponible")
+                    //}
+                    // Modifica el Button
                     Button(
-                        onClick = { /* TODO: Acción Ver más */ },
+                        onClick = onViewMoreClick, // <-- USA LA LAMBDA AQUÍ
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
                         shape = RoundedCornerShape(8.dp)
                     ) {
@@ -147,6 +156,7 @@ fun RoomCard(
         }
     }
 }
+
 
 // Pequeño chip para el estado "Disponible"
 @Composable
