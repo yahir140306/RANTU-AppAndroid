@@ -12,14 +12,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.rantu.Components.ViewFist
-import com.example.rantu.ui.theme.RANTUTheme
+import com.example.rantu.ui.theme.RANTUTheme // Asegúrate de que esta importación exista
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ViewFist()
+            // Envuelve tu Composable principal con el tema de la aplicación.
+            RANTUTheme (darkTheme = false) {
+                ViewFist()
+            }
         }
     }
 }
