@@ -19,3 +19,12 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep kotlinx.serialization generated serializer classes and serializer() static
+# This prevents R8/ProGuard from stripping generated serializer symbols used via reflection
+-keepclassmembers class * {
+	public static kotlinx.serialization.KSerializer serializer(...);
+}
+
+# Keep generated serializer classes (names end with $$serializer)
+-keep class **$$serializer { *; }
