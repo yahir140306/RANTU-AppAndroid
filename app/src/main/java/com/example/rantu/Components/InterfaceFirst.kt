@@ -1,32 +1,18 @@
 package com.example.rantu.Components
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items // Importación importante
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel // <<-- SOLUCIÓN 1
-import com.example.rantu.data.Room // Importa tu modelo de datos
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.rantu.data.Room
 import com.example.rantu.ui.RoomViewModel
 
 @Preview(showBackground = true, showSystemUi = true)
@@ -41,12 +27,13 @@ fun ViewFist(roomViewModel: RoomViewModel = viewModel()) {
     val isLoading = roomViewModel.isLoading.value
     val errorMsg = roomViewModel.error.value
 
-    var showDetailScreen by remember { mutableStateOf(false) }
+    // El cuarto actualmente seleccionado (null = lista)
+    var selectedRoom by remember { mutableStateOf<Room?>(null) }
 
-    if (showDetailScreen) {
-        RoomDetailScreen(onBack = { showDetailScreen = false })
+    if (selectedRoom != null) {
+        // Mostrar pantalla de detalle para el cuarto seleccionado
+        RoomDetailScreen(room = selectedRoom!!, onBack = { selectedRoom = null })
     } else {
-        // <<-- SOLUCIÓN 2: Lógica de carga corregida
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -63,7 +50,7 @@ fun ViewFist(roomViewModel: RoomViewModel = viewModel()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Razones comunes: no hay publicaciones, falla de sincronización o permisos.")
                         Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = { roomViewModel.fetchRooms() }, colors = ButtonDefaults.buttonColors()) {
+                        Button(onClick = { roomViewModel.fetchRooms() }) {
                             Text("Reintentar")
                         }
                     }
@@ -71,7 +58,7 @@ fun ViewFist(roomViewModel: RoomViewModel = viewModel()) {
             } else {
                 RoomListScreen(
                     rooms = rooms,
-                    onRoomClick = { showDetailScreen = true }
+                    onRoomClick = { room -> selectedRoom = room }
                 )
             }
         }
@@ -86,16 +73,15 @@ fun ErrorScreen(message: String, onRetry: () -> Unit) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = message, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(12.dp))
-            Button(onClick = onRetry, colors = ButtonDefaults.buttonColors()) {
+            Button(onClick = onRetry) {
                 Text("Reintentar")
             }
         }
     }
 }
 
-// <<-- SOLUCIÓN 3: Firma de la función corregida
 @Composable
-fun RoomListScreen(rooms: List<Room>, onRoomClick: () -> Unit) {
+fun RoomListScreen(rooms: List<Room>, onRoomClick: (Room) -> Unit) {
     Scaffold(
         topBar = { TopBar() },
     ) { innerPadding ->
@@ -114,7 +100,6 @@ fun RoomListScreen(rooms: List<Room>, onRoomClick: () -> Unit) {
             }
             item { FilterBar() }
 
-            // <<-- SOLUCIÓN 3: Uso correcto de 'items' y parámetros
             items(rooms) { room ->
                 RoomCard(
                     isAvailable = room.isAvailable,
@@ -122,9 +107,10 @@ fun RoomListScreen(rooms: List<Room>, onRoomClick: () -> Unit) {
                     title = room.title,
                     description = room.description,
                     price = "$${room.price.toInt()}",
-                    onViewMoreClick = onRoomClick
+                    onViewMoreClick = { onRoomClick(room) }
                 )
             }
         }
     }
 }
+
