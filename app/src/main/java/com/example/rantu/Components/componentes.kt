@@ -30,7 +30,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.rantu.R // Asegúrate de tener una imagen de ejemplo en res/drawable
+import coil.compose.AsyncImage
+import com.example.rantu.R// Asegúrate de tener una imagen de ejemplo en res/drawable
 
 // Componente para la Barra Superior
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,7 +95,7 @@ fun FilterBar() {
 @Composable
 fun RoomCard(
     isAvailable: Boolean,
-    imageRes: Int,
+    imageUrl: String,
     title: String,
     description: String,
     price: String,
@@ -109,8 +110,8 @@ fun RoomCard(
     ) {
         Column {
             Box {
-                Image(
-                    painter = painterResource(id = imageRes),
+                AsyncImage(
+                    model = imageUrl,
                     contentDescription = title,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -118,6 +119,7 @@ fun RoomCard(
                         .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
                     contentScale = ContentScale.Crop
                 )
+
                 if (isAvailable) {
                     StatusChip(text = "Disponible")
                 }
