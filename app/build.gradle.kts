@@ -20,6 +20,7 @@ dependencies {
 
     // Supabase: fijamos la versión explícitamente para evitar resoluciones sin versión
     implementation("io.github.jan-tennert.supabase:postgrest-kt:2.5.1")
+    implementation("io.github.jan-tennert.supabase:gotrue-kt:2.5.1")
     // ViewModel + Compose helpers
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
     implementation("io.ktor:ktor-client-android:2.3.12")
@@ -28,6 +29,9 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
     // Kotlinx serialization (JSON)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    // Accompanist Pager para carrusel de imágenes
+    implementation("com.google.accompanist:accompanist-pager:0.32.0")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
 
     // Testing
     testImplementation(libs.junit)
