@@ -11,12 +11,26 @@ import kotlinx.coroutines.launch
 class RoomViewModel : ViewModel() {
     private val repository = RoomRepository()
 
-    // Estado para la lista de cuartos
+    // Estado para la lista de cuartos original (sin filtrar)
+    private val allRooms = mutableStateOf<List<Room>>(emptyList())
+    
+    // Estado para la lista de cuartos mostrados (puede estar filtrada)
     val rooms = mutableStateOf<List<Room>>(emptyList())
+    
+    // Total de cuartos (sin filtrar) para mostrar en contador
+    val totalRoomsCount: Int
+        get() = allRooms.value.size
+    
     // Estado para saber si se están cargando los datos
     val isLoading = mutableStateOf(true)
+    
     // Estado para guardar un mensaje de error legible para el usuario
     val error = mutableStateOf<String?>(null)
+    
+    // Estados para el filtro de precio
+    val minPrice = mutableStateOf("")
+    val maxPrice = mutableStateOf("")
+    val isFilterActive = mutableStateOf(false)
 
     init {
         // Se llama al crear el ViewModel
@@ -31,7 +45,8 @@ class RoomViewModel : ViewModel() {
             error.value = null
             try {
                 val roomList = repository.getAllRooms()
-                rooms.value = roomList
+                allRooms.value = roomList
+                applyFilter()
             } catch (e: Exception) {
                 // Mapear errores comunes a mensajes legibles para el usuario
                 val message = when (e) {
@@ -52,5 +67,40 @@ class RoomViewModel : ViewModel() {
                 isLoading.value = false
             }
         }
+    }
+    
+    // Aplicar el filtro de precio
+    fun applyFilter() {
+        val min = minPrice.value.toDoubleOrNull() ?: 0.0
+        val max = maxPrice.value.toDoubleOrNull() ?: Double.MAX_VALUE
+        
+        rooms.value = if (minPrice.value.isEmpty() && maxPrice.value.isEmpty()) {
+            isFilterActive.value = false
+            allRooms.value
+        } else {
+            isFilterActive.value = true
+            allRooms.value.filter { room ->
+                val price = room.price ?: 0.0
+                price >= min && price <= max
+            }
+        }
+    }
+    
+    // Limpiar el filtro
+    fun clearFilter() {
+        minPrice.value = ""
+        maxPrice.value = ""
+        isFilterActive.value = false
+        rooms.value = allRooms.value
+    }
+    
+    // Actualizar precio mínimo
+    fun updateMinPrice(value: String) {
+        minPrice.value = value
+    }
+    
+    // Actualizar precio máximo
+    fun updateMaxPrice(value: String) {
+        maxPrice.value = value
     }
 }

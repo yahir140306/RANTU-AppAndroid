@@ -1,96 +1,537 @@
 package com.example.rantu.Components
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.rantu.data.Comment
 import com.example.rantu.data.Room
-import androidx.compose.ui.tooling.preview.Preview
+import com.example.rantu.ui.RoomDetailViewModel
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.HorizontalPagerIndicator
+import com.google.accompanist.pager.rememberPagerState
+import java.net.URLEncoder
+import java.text.SimpleDateFormat
+import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
 @Composable
-fun RoomDetailScreen(room: Room, onBack: () -> Unit) {
+fun RoomDetailScreen(
+    room: Room,
+    onBack: () -> Unit,
+    viewModel: RoomDetailViewModel = viewModel()
+) {
+    val context = LocalContext.current
+    val comments = viewModel.comments.value
+    val statistics = viewModel.statistics.value
+    val isLoading = viewModel.isLoading.value
+    val error = viewModel.error.value
+    
+    var selectedRating by remember { mutableStateOf(0) }
+    var commentText by remember { mutableStateOf("") }
+    var showCommentDialog by remember { mutableStateOf(false) }
+    var submitError by remember { mutableStateOf<String?>(null) }
+    
+    LaunchedEffect(room.id) {
+        viewModel.loadComments(room.id)
+    }
+    
+    // Preparar imágenes
+    val images = remember(room) {
+        listOfNotNull(
+            room.imagen1?.takeIf { it.isNotBlank() },
+            room.imagen2?.takeIf { it.isNotBlank() },
+            room.imagen3?.takeIf { it.isNotBlank() }
+        ).ifEmpty { listOf(room.resolvedImageUrl()) }
+    }
+    
+    val pagerState = rememberPagerState()
+
     Scaffold(
-        topBar = { TopBar() }
-    ) { innerPadding ->
-        Column(
+        topBar = {
+            TopAppBar(
+                title = { Text("Detalles del Cuarto") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
+                .padding(padding)
         ) {
-            // Botón de Volver
-            TextButton(onClick = onBack, modifier = Modifier.padding(start = 16.dp, top = 8.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.width(8.dp))
-                Text("Volver", color = MaterialTheme.colorScheme.primary)
+            // Carrusel de imágenes
+            item {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    HorizontalPager(
+                        count = images.size,
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                    ) { page ->
+                        AsyncImage(
+                            model = images[page],
+                            contentDescription = "Imagen ${page + 1}",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    
+                    // Indicador de página
+                    if (images.size > 1) {
+                        HorizontalPagerIndicator(
+                            pagerState = pagerState,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(16.dp),
+                            activeColor = Color.White,
+                            inactiveColor = Color.White.copy(alpha = 0.5f)
+                        )
+                    }
+                }
             }
+            
+            // Información principal
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = room.title ?: "Sin título",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "$${room.price?.toInt() ?: 0} / mes",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF3B82F6)
+                    )
+                }
+            }
+            
+            // Descripción
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "Descripción",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            room.description ?: "Sin descripción",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            }
+            
+            // Características y Ubicación
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                "Características",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                room.caracteristicas ?: "No especificadas",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                    
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                "Ubicación",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                room.ubicacion ?: "No especificada",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // Sección de Comentarios y Calificaciones
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Comentarios y Calificaciones",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            
+                            if (statistics != null) {
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        StarRating(rating = statistics.promedio, size = 20.dp)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            String.format("%.1f", statistics.promedio),
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    Text(
+                                        "${statistics.total} comentarios",
+                                        fontSize = 12.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Divider()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Botón para agregar comentario
+                        Button(
+                            onClick = { showCommentDialog = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF3B82F6)
+                            )
+                        ) {
+                            Text("Deja tu comentario")
+                        }
+                    }
+                }
+            }
+            
+            // Lista de comentarios
+            if (isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            } else if (comments.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFF9FAFB)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("💬", fontSize = 48.sp)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                "No hay comentarios aún",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "¡Sé el primero en comentar!",
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                }
+            } else {
+                items(comments) { comment ->
+                    CommentCard(comment = comment)
+                }
+            }
+            
+            // Botón de WhatsApp
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        room.celular?.let { celular ->
+                            val numero = celular.replace(Regex("[\\s\\-()]"), "")
+                            val mensaje = "Hola! Me interesa el cuarto \"${room.title}\" con precio de $${room.price?.toInt()}. ¿Podrías darme más información?"
+                            val mensajeCodificado = URLEncoder.encode(mensaje, "UTF-8")
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$numero?text=$mensajeCodificado"))
+                            context.startActivity(intent)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF25D366)
+                    ),
+                    enabled = !room.celular.isNullOrBlank()
+                ) {
+                    Text("📱 Contactar al Propietario", fontSize = 16.sp)
+                }
+                Spacer(modifier = Modifier.height(80.dp))
+            }
+        }
+    }
+    
+    // Diálogo para agregar comentario
+    if (showCommentDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showCommentDialog = false
+                selectedRating = 0
+                commentText = ""
+                submitError = null
+            },
+            title = { Text("Deja tu comentario") },
+            text = {
+                Column {
+                    Text("Calificación *", fontWeight = FontWeight.Medium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        for (i in 1..5) {
+                            Icon(
+                                imageVector = if (i <= selectedRating) Icons.Filled.Star else Icons.Outlined.Star,
+                                contentDescription = "Estrella $i",
+                                tint = if (i <= selectedRating) Color(0xFFFCD34D) else Color.Gray,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clickable { selectedRating = i }
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text("Comentario *", fontWeight = FontWeight.Medium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = commentText,
+                        onValueChange = { commentText = it },
+                        placeholder = { Text("Comparte tu experiencia...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        maxLines = 5
+                    )
+                    
+                    if (submitError != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = submitError!!,
+                            color = Color.Red,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (selectedRating == 0) {
+                            submitError = "Selecciona una calificación"
+                            return@Button
+                        }
+                        if (commentText.length < 10) {
+                            submitError = "El comentario debe tener al menos 10 caracteres"
+                            return@Button
+                        }
+                        
+                        viewModel.addComment(
+                            roomId = room.id,
+                            comentario = commentText,
+                            calificacion = selectedRating,
+                            onSuccess = {
+                                showCommentDialog = false
+                                selectedRating = 0
+                                commentText = ""
+                                submitError = null
+                            },
+                            onError = { error ->
+                                submitError = error
+                            }
+                        )
+                    }
+                ) {
+                    Text("Publicar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showCommentDialog = false
+                    selectedRating = 0
+                    commentText = ""
+                    submitError = null
+                }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
 
-            // Imagen principal
-            AsyncImage(
-                model = room.resolvedImageUrl(),
-                contentDescription = room.title,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(250.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
+@Composable
+fun StarRating(rating: Double, size: androidx.compose.ui.unit.Dp = 16.dp) {
+    Row {
+        for (i in 1..5) {
+            Icon(
+                imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
+                contentDescription = "Estrella",
+                tint = if (i <= rating) Color(0xFFFCD34D) else Color.Gray,
+                modifier = Modifier.size(size)
             )
-
-            Spacer(Modifier.height(16.dp))
-
-            // Título y Precio
-            Text(
-                text = room.title,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            Text(
-                text = "\$${room.price.toInt()} / mes",
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-            )
-
-            Spacer(Modifier.height(24.dp))
-
-            // Sección de Descripción
-            DetailSection(title = "Descripción", content = if (room.description.isNotBlank()) room.description else "Sin descripción disponible.")
-            Spacer(Modifier.height(16.dp))
-            DetailSection(title = "Estado", content = if (room.isAvailable) "Disponible" else "No disponible")
         }
     }
 }
 
 @Composable
-fun DetailSection(title: String, content: String) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(8.dp))
-        OutlinedCard(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text(content, modifier = Modifier.padding(16.dp))
+fun CommentCard(comment: Comment) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Avatar
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(0xFF3B82F6), shape = RoundedCornerShape(50)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        comment.getUserInitial(),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        comment.getFormattedEmail().split("@")[0],
+                        fontWeight = FontWeight.Medium
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        StarRating(rating = comment.calificacion.toDouble())
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            formatDate(comment.createdAt),
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Text(
+                comment.comentario,
+                fontSize = 14.sp,
+                color = Color.DarkGray
+            )
         }
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun RoomDetailScreenPreview() {
-    val sample = Room(id = 1, title = "Cuarto ejemplo", description = "Descripción del cuarto", price = 1550.0)
-    RoomDetailScreen(room = sample, onBack = {})
+fun formatDate(dateString: String): String {
+    return try {
+        val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val formatter = SimpleDateFormat("dd MMM yyyy", Locale("es", "ES"))
+        val date = parser.parse(dateString)
+        date?.let { formatter.format(it) } ?: dateString
+    } catch (e: Exception) {
+        dateString
+    }
 }

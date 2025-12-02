@@ -1,12 +1,15 @@
 package com.example.rantu.Components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -22,15 +25,29 @@ fun ViewFirstPreview() {
 }
 
 @Composable
-fun ViewFist(roomViewModel: RoomViewModel = viewModel()) {
+fun ViewFist(
+    roomViewModel: RoomViewModel = viewModel(),
+    isLoggedIn: Boolean = false,
+    userEmail: String? = null,
+    onLoginClick: () -> Unit = {},
+    onLogoutClick: () -> Unit = {}
+) {
     val rooms = roomViewModel.rooms.value
     val isLoading = roomViewModel.isLoading.value
     val errorMsg = roomViewModel.error.value
 
     // El cuarto actualmente seleccionado (null = lista)
     var selectedRoom by remember { mutableStateOf<Room?>(null) }
+    
+    // Estado para mostrar "Mis Cuartos"
+    var showMyRooms by remember { mutableStateOf(false) }
 
-    if (selectedRoom != null) {
+    if (showMyRooms) {
+        // Mostrar pantalla de Mis Cuartos
+        MyRoomsScreen(
+            onBack = { showMyRooms = false }
+        )
+    } else if (selectedRoom != null) {
         // Mostrar pantalla de detalle para el cuarto seleccionado
         RoomDetailScreen(room = selectedRoom!!, onBack = { selectedRoom = null })
     } else {
@@ -58,7 +75,13 @@ fun ViewFist(roomViewModel: RoomViewModel = viewModel()) {
             } else {
                 RoomListScreen(
                     rooms = rooms,
-                    onRoomClick = { room -> selectedRoom = room }
+                    roomViewModel = roomViewModel,
+                    onRoomClick = { room -> selectedRoom = room },
+                    isLoggedIn = isLoggedIn,
+                    userEmail = userEmail,
+                    onLoginClick = onLoginClick,
+                    onLogoutClick = onLogoutClick,
+                    onProfileClick = { showMyRooms = true }
                 )
             }
         }
@@ -81,9 +104,28 @@ fun ErrorScreen(message: String, onRetry: () -> Unit) {
 }
 
 @Composable
-fun RoomListScreen(rooms: List<Room>, onRoomClick: (Room) -> Unit) {
+fun RoomListScreen(
+    rooms: List<Room>,
+    roomViewModel: RoomViewModel,
+    onRoomClick: (Room) -> Unit,
+    isLoggedIn: Boolean,
+    userEmail: String? = null,
+    onLoginClick: () -> Unit,
+    onLogoutClick: () -> Unit,
+    onProfileClick: () -> Unit = {}
+) {
+    var isFilterExpanded by remember { mutableStateOf(false) }
+    
     Scaffold(
-        topBar = { TopBar() },
+        topBar = {
+            TopBar(
+                isLoggedIn = isLoggedIn,
+                userEmail = userEmail,
+                onLoginClick = onLoginClick,
+                onLogoutClick = onLogoutClick,
+                onProfileClick = onProfileClick
+            )
+        },
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -98,17 +140,100 @@ fun RoomListScreen(rooms: List<Room>, onRoomClick: (Room) -> Unit) {
                     modifier = Modifier.padding(16.dp)
                 )
             }
-            item { FilterBar() }
+            
+            item {
+                FilterBar(
+                    isExpanded = isFilterExpanded,
+                    onToggle = { isFilterExpanded = !isFilterExpanded },
+                    minPrice = roomViewModel.minPrice.value,
+                    maxPrice = roomViewModel.maxPrice.value,
+                    onMinPriceChange = { value ->
+                        roomViewModel.updateMinPrice(value)
+                    },
+                    onMaxPriceChange = { value ->
+                        roomViewModel.updateMaxPrice(value)
+                    },
+                    onApplyFilter = {
+                        roomViewModel.applyFilter()
+                        isFilterExpanded = false
+                    },
+                    onClearFilter = {
+                        roomViewModel.clearFilter()
+                        isFilterExpanded = false
+                    },
+                    isFilterActive = roomViewModel.isFilterActive.value,
+                    filteredCount = rooms.size,
+                    totalCount = roomViewModel.totalRoomsCount
+                )
+            }
 
             items(rooms) { room ->
                 RoomCard(
-                    isAvailable = room.isAvailable,
+                    isAvailable = room.isAvailable ?: false,
                     imageUrl = room.resolvedImageUrl(),
-                    title = room.title,
-                    description = room.description,
-                    price = "$${room.price.toInt()}",
+                    title = room.title ?: "Sin título",
+                    description = room.description ?: "Sin descripción",
+                    price = "$${room.price?.toInt() ?: 0}",
                     onViewMoreClick = { onRoomClick(room) }
                 )
+            }
+            
+            // Mensaje cuando no hay resultados
+            if (rooms.isEmpty() && roomViewModel.isFilterActive.value) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFEF3C7)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .background(
+                                        Color(0xFFFDE68A),
+                                        shape = RoundedCornerShape(50)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("⚠️", fontSize = 32.sp)
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                "No se encontraron cuartos",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF92400E)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "No hay cuartos disponibles en el rango de precios seleccionado.",
+                                fontSize = 14.sp,
+                                color = Color(0xFF92400E),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = {
+                                    roomViewModel.clearFilter()
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFD97706)
+                                )
+                            ) {
+                                Text("Ver todos los cuartos")
+                            }
+                        }
+                    }
+                }
             }
         }
     }
