@@ -75,4 +75,25 @@ class UserRoomsViewModel : ViewModel() {
             }
         }
     }
+    
+    fun toggleRoomActive(roomId: Int, isActive: Boolean, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val success = repository.toggleRoomActive(roomId, isActive)
+                if (success) {
+                    // Actualizar en la lista local
+                    rooms.value = rooms.value.map { room ->
+                        if (room.id == roomId) room.copy(isAvailable = isActive) else room
+                    }
+                    onSuccess()
+                } else {
+                    onError("No se pudo ${if (isActive) "activar" else "desactivar"} el cuarto")
+                }
+            } catch (e: Exception) {
+                val message = e.message ?: "Error al cambiar estado del cuarto"
+                onError(message)
+                println("[UserRoomsViewModel] Error toggling room active state: $e")
+            }
+        }
+    }
 }
