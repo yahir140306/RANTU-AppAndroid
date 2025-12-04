@@ -2,6 +2,7 @@ package com.example.rantu.Components
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
@@ -25,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.rantu.data.Comment
@@ -34,9 +38,12 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.google.accompanist.pager.rememberPagerState
+import dev.shreyaspatil.capturable.Capturable
+import dev.shreyaspatil.capturable.controller.rememberCaptureController
 import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
 @Composable
@@ -50,6 +57,11 @@ fun RoomDetailScreen(
     val statistics = viewModel.statistics.value
     val isLoading = viewModel.isLoading.value
     val error = viewModel.error.value
+    
+    val captureController = rememberCaptureController()
+    val coroutineScope = rememberCoroutineScope()
+    var showDownloadDialog by remember { mutableStateOf(false) }
+    var isDownloading by remember { mutableStateOf(false) }
     
     var selectedRating by remember { mutableStateOf(0) }
     var commentText by remember { mutableStateOf("") }
@@ -140,6 +152,118 @@ fun RoomDetailScreen(
                         color = Color(0xFF3B82F6)
                     )
                 }
+            }
+            
+            // Botones de acción (WhatsApp, Compartir y Descargar)
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Botón de WhatsApp
+                        Button(
+                            onClick = {
+                                val celular = room.celular ?: ""
+                                if (celular.isNotEmpty()) {
+                                    val mensaje = "Hola, me interesa el cuarto: ${room.title} - $${room.price}/mes. " +
+                                            "Lo vi en RANTU. ¿Está disponible?"
+                                    val mensajeCodificado = URLEncoder.encode(mensaje, "UTF-8")
+                                    val whatsappUrl = "https://wa.me/$celular?text=$mensajeCodificado"
+                                    
+                                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                                        data = Uri.parse(whatsappUrl)
+                                    }
+                                    context.startActivity(intent)
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF25D366)
+                            ),
+                            enabled = !room.celular.isNullOrEmpty()
+                        ) {
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(
+                                    id = android.R.drawable.stat_notify_chat
+                                ),
+                                contentDescription = "WhatsApp",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("WhatsApp")
+                        }
+                        
+                        // Botón de Compartir
+                        Button(
+                            onClick = {
+                                val webUrl = "https://prototype-delta-vert.vercel.app/cuarto/${room.id}"
+                                val deepLinkUrl = "rantu://cuarto/${room.id}"
+                                val shareText = """
+                                    🏠 ${room.title}
+                                    💰 $${room.price}/mes
+                                    
+                                    ${room.description?.take(100)}...
+                                    
+                                    Ver más detalles:
+                                    $webUrl
+                                    
+                                    O abre en la app:
+                                    $deepLinkUrl
+                                """.trimIndent()
+                                
+                                val shareIntent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    putExtra(Intent.EXTRA_TEXT, shareText)
+                                    putExtra(Intent.EXTRA_TITLE, "Compartir cuarto")
+                                    type = "text/plain"
+                                }
+                                
+                                context.startActivity(
+                                    Intent.createChooser(shareIntent, "Compartir cuarto via")
+                                )
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF6B7280)
+                            )
+                        ) {
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(
+                                    id = android.R.drawable.ic_menu_share
+                                ),
+                                contentDescription = "Compartir",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Compartir")
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Botón de Descargar Tarjeta
+                    Button(
+                        onClick = { showDownloadDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF10B981)
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Descargar",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Descargar Tarjeta")
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
             }
             
             // Descripción
@@ -450,6 +574,112 @@ fun RoomDetailScreen(
                 }
             }
         )
+    }
+    
+    // Diálogo de descarga de tarjeta
+    if (showDownloadDialog) {
+        Dialog(onDismissRequest = { showDownloadDialog = false }) {
+            Card(
+                modifier = Modifier.wrapContentSize(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Descargar Tarjeta",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Vista previa capturable
+                    Capturable(
+                        controller = captureController,
+                        onCaptured = { bitmap, error ->
+                            if (bitmap != null && error == null) {
+                                val filename = "RANTU_${room.title?.replace(" ", "_")}_${System.currentTimeMillis()}.png"
+                                val androidBitmap = bitmap.asAndroidBitmap()
+                                val success = saveBitmapToGallery(context, androidBitmap, filename)
+                                
+                                isDownloading = false
+                                showDownloadDialog = false
+                                
+                                if (success) {
+                                    Toast.makeText(
+                                        context,
+                                        "¡Tarjeta guardada en Galería!",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Error al guardar la imagen",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            } else {
+                                isDownloading = false
+                                Toast.makeText(
+                                    context,
+                                    "Error al capturar: ${error?.message}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    ) {
+                        DownloadableRoomCard(room = room)
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showDownloadDialog = false },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isDownloading
+                        ) {
+                            Text("Cancelar")
+                        }
+                        
+                        Button(
+                            onClick = {
+                                isDownloading = true
+                                coroutineScope.launch {
+                                    captureController.capture()
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isDownloading,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF10B981)
+                            )
+                        ) {
+                            if (isDownloading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = "Descargar",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Descargar")
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
