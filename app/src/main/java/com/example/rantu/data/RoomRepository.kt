@@ -167,6 +167,37 @@ class RoomRepository {
             false
         }
     }
+    
+    // Toggle estado activo/inactivo de un cuarto
+    suspend fun toggleRoomActive(roomId: Int, isActive: Boolean): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val user = SupabaseClient.client.auth.currentUserOrNull()
+                ?: throw IllegalStateException("Usuario no autenticado")
+            
+            // Verificar que el cuarto pertenece al usuario
+            val existingRoom = getRoomById(roomId)
+                ?: throw IllegalStateException("Cuarto no encontrado")
+            
+            if (existingRoom.user_id != user.id) {
+                throw IllegalStateException("No tienes permisos para modificar este cuarto")
+            }
+            
+            // Actualizar estado activo
+            SupabaseClient.client.from("cuartos")
+                .update(mapOf("activo" to isActive)) {
+                    filter {
+                        eq("id", roomId)
+                        eq("user_id", user.id)
+                    }
+                }
+            
+            println("[RoomRepository] toggled room $roomId to active: $isActive")
+            true
+        } catch (e: Exception) {
+            println("[RoomRepository] Error toggling room active state: ${e.message}")
+            false
+        }
+    }
 
     private fun normalizeImageUrl(raw: String): String {
         val trimmed = raw.trim()
