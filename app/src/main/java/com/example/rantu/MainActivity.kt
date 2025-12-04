@@ -1,6 +1,7 @@
 package com.example.rantu
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,6 +29,14 @@ class MainActivity : ComponentActivity() {
                 var isLoggedIn by remember { mutableStateOf(false) }
                 var userEmail by remember { mutableStateOf<String?>(null) }
                 var showLoginScreen by remember { mutableStateOf(false) }
+                var deepLinkRoomId by remember { mutableStateOf<Int?>(null) }
+
+                // Procesar deep links de cuartos
+                LaunchedEffect(Unit) {
+                    handleDeepLink(intent)?.let { roomId ->
+                        deepLinkRoomId = roomId
+                    }
+                }
 
                 // Observar cambios en la sesión
                 LaunchedEffect(Unit) {
@@ -66,6 +75,10 @@ class MainActivity : ComponentActivity() {
                                 isLoggedIn = false
                                 userEmail = null
                             }
+                        },
+                        deepLinkRoomId = deepLinkRoomId,
+                        onDeepLinkHandled = {
+                            deepLinkRoomId = null
                         }
                     )
                 }
@@ -78,5 +91,37 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         // Manejar deep link cuando la app ya está abierta
         SupabaseClient.client.handleDeeplinks(intent)
+        
+        // Manejar deep links de cuartos cuando la app está abierta
+        handleDeepLink(intent)?.let { roomId ->
+            // Aquí podrías emitir un evento o usar un estado compartido
+            // Por ahora, recreamos la actividad para procesarlo
+            recreate()
+        }
+    }
+    
+    private fun handleDeepLink(intent: Intent?): Int? {
+        val data: Uri? = intent?.data
+        
+        return when {
+            // Formato: https://prototype-delta-vert.vercel.app/cuarto/123
+            data?.host == "prototype-delta-vert.vercel.app" && 
+            data.pathSegments.getOrNull(0) == "cuarto" -> {
+                data.pathSegments.getOrNull(1)?.toIntOrNull()
+            }
+            
+            // Formato: http://localhost:4321/cuarto/123
+            data?.host == "localhost" && 
+            data.pathSegments.getOrNull(0) == "cuarto" -> {
+                data.pathSegments.getOrNull(1)?.toIntOrNull()
+            }
+            
+            // Formato: rantu://cuarto/123
+            data?.scheme == "rantu" && data.host == "cuarto" -> {
+                data.pathSegments.firstOrNull()?.toIntOrNull()
+            }
+            
+            else -> null
+        }
     }
 }
