@@ -3,6 +3,7 @@ package com.example.rantu.data
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.storage.Storage
 
 object SupabaseClient {
     const val SUPABASE_URL = "https://hkwvtpexiobfectukjmx.supabase.co"
@@ -17,5 +18,6 @@ object SupabaseClient {
             scheme = "rantu"
             host = "login"
         }
+        install(Storage)
     }
 }
