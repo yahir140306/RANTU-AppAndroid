@@ -21,6 +21,7 @@ dependencies {
     // Supabase: fijamos la versión explícitamente para evitar resoluciones sin versión
     implementation("io.github.jan-tennert.supabase:postgrest-kt:2.5.1")
     implementation("io.github.jan-tennert.supabase:gotrue-kt:2.5.1")
+    implementation("io.github.jan-tennert.supabase:storage-kt:2.5.1")
     // ViewModel + Compose helpers
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
     implementation("io.ktor:ktor-client-android:2.3.12")
@@ -32,6 +33,9 @@ dependencies {
     // Accompanist Pager para carrusel de imágenes
     implementation("com.google.accompanist:accompanist-pager:0.32.0")
     implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
+    
+    // Captura de pantalla para generar imágenes
+    implementation("dev.shreyaspatil:capturable:2.1.0")
 
     // Testing
     testImplementation(libs.junit)

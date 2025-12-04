@@ -4,6 +4,16 @@
 
     <!-- Permiso para acceder a Internet (necesario para cargar imágenes remotas) -->
     <uses-permission android:name="android.permission.INTERNET" />
+    
+    <!-- Permisos para leer imágenes de la galería -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    
+    <!-- Permisos para escribir en almacenamiento externo (para guardar tarjetas descargadas) -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"
+        tools:ignore="ScopedStorage" />
 
     <application
         android:allowBackup="true"
@@ -35,6 +45,36 @@
                 <!-- Deep link personalizado para la app -->
                 <data android:scheme="rantu" 
                       android:host="login" />
+            </intent-filter>
+            
+            <!-- Deep Links para Web URLs -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                
+                <!-- URLs de la versión web -->
+                <data android:scheme="https" 
+                      android:host="prototype-delta-vert.vercel.app" />
+                <data android:scheme="http" 
+                      android:host="prototype-delta-vert.vercel.app" />
+                      
+                <!-- Para desarrollo local -->
+                <data android:scheme="http" 
+                      android:host="localhost"
+                      android:port="4321" />
+            </intent-filter>
+            
+            <!-- Deep Links para compartir cuartos -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                
+                <!-- URL scheme personalizado para compartir -->
+                <data android:scheme="rantu" 
+                      android:host="cuarto"
+                      android:pathPrefix="/" />
             </intent-filter>
         </activity>
     </application>
