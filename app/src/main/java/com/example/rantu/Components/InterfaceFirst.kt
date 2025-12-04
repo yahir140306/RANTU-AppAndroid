@@ -1,5 +1,8 @@
 package com.example.rantu.Components
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -17,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rantu.data.Room
 import com.example.rantu.ui.RoomViewModel
+import java.net.URLEncoder
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
@@ -30,7 +35,9 @@ fun ViewFist(
     isLoggedIn: Boolean = false,
     userEmail: String? = null,
     onLoginClick: () -> Unit = {},
-    onLogoutClick: () -> Unit = {}
+    onLogoutClick: () -> Unit = {},
+    deepLinkRoomId: Int? = null,
+    onDeepLinkHandled: () -> Unit = {}
 ) {
     val rooms = roomViewModel.rooms.value
     val isLoading = roomViewModel.isLoading.value
@@ -41,48 +48,101 @@ fun ViewFist(
     
     // Estado para mostrar "Mis Cuartos"
     var showMyRooms by remember { mutableStateOf(false) }
-
-    if (showMyRooms) {
-        // Mostrar pantalla de Mis Cuartos
-        MyRoomsScreen(
-            onBack = { showMyRooms = false }
-        )
-    } else if (selectedRoom != null) {
-        // Mostrar pantalla de detalle para el cuarto seleccionado
-        RoomDetailScreen(room = selectedRoom!!, onBack = { selectedRoom = null })
-    } else {
-        if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+    
+    // Estado para mostrar "Agregar Cuarto"
+    var showAddRoom by remember { mutableStateOf(false) }
+    
+    // Estado para mostrar "Editar Cuarto"
+    var roomToEdit by remember { mutableStateOf<Room?>(null) }
+    
+    // Manejar deep link
+    LaunchedEffect(deepLinkRoomId) {
+        if (deepLinkRoomId != null) {
+            // Buscar el cuarto por ID
+            val room = rooms.find { it.id == deepLinkRoomId }
+            if (room != null) {
+                selectedRoom = room
             }
-        } else {
-            // Si hay error, mostrar pantalla de error con opción de reintentar
-            if (errorMsg != null) {
-                ErrorScreen(message = errorMsg, onRetry = { roomViewModel.fetchRooms() })
-            } else if (rooms.isEmpty()) {
-                // Lista vacía pero sin error -> informar que no hay cuartos publicados
+            onDeepLinkHandled()
+        }
+    }
+
+    when {
+        showAddRoom -> {
+            BackHandler { showAddRoom = false }
+            // Mostrar pantalla de Agregar Cuarto
+            AddRoomScreen(
+                onBack = { showAddRoom = false },
+                onSuccess = {
+                    showAddRoom = false
+                    showMyRooms = true
+                    // Recargar cuartos
+                    roomViewModel.fetchRooms()
+                }
+            )
+        }
+        roomToEdit != null -> {
+            BackHandler { roomToEdit = null }
+            // Mostrar pantalla de Editar Cuarto
+            EditRoomScreen(
+                room = roomToEdit!!,
+                onBack = { roomToEdit = null },
+                onSuccess = {
+                    roomToEdit = null
+                    showMyRooms = true
+                    // Recargar cuartos
+                    roomViewModel.fetchRooms()
+                }
+            )
+        }
+        showMyRooms -> {
+            BackHandler { showMyRooms = false }
+            // Mostrar pantalla de Mis Cuartos
+            MyRoomsScreen(
+                onBack = { showMyRooms = false },
+                onAddRoom = { showAddRoom = true },
+                onEditRoom = { room -> roomToEdit = room }
+            )
+        }
+        selectedRoom != null -> {
+            BackHandler { selectedRoom = null }
+            // Mostrar pantalla de detalle para el cuarto seleccionado
+            RoomDetailScreen(room = selectedRoom!!, onBack = { selectedRoom = null })
+        }
+        else -> {
+            if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("No hay cuartos disponibles.")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Razones comunes: no hay publicaciones, falla de sincronización o permisos.")
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = { roomViewModel.fetchRooms() }) {
-                            Text("Reintentar")
-                        }
-                    }
+                    CircularProgressIndicator()
                 }
             } else {
-                RoomListScreen(
-                    rooms = rooms,
-                    roomViewModel = roomViewModel,
-                    onRoomClick = { room -> selectedRoom = room },
-                    isLoggedIn = isLoggedIn,
-                    userEmail = userEmail,
-                    onLoginClick = onLoginClick,
-                    onLogoutClick = onLogoutClick,
-                    onProfileClick = { showMyRooms = true }
-                )
+                // Si hay error, mostrar pantalla de error con opción de reintentar
+                if (errorMsg != null) {
+                    ErrorScreen(message = errorMsg, onRetry = { roomViewModel.fetchRooms() })
+                } else if (rooms.isEmpty()) {
+                    // Lista vacía pero sin error -> informar que no hay cuartos publicados
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("No hay cuartos disponibles.")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Razones comunes: no hay publicaciones, falla de sincronización o permisos.")
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(onClick = { roomViewModel.fetchRooms() }) {
+                                Text("Reintentar")
+                            }
+                        }
+                    }
+                } else {
+                    RoomListScreen(
+                        rooms = rooms,
+                        roomViewModel = roomViewModel,
+                        onRoomClick = { room -> selectedRoom = room },
+                        isLoggedIn = isLoggedIn,
+                        userEmail = userEmail,
+                        onLoginClick = onLoginClick,
+                        onLogoutClick = onLogoutClick,
+                        onProfileClick = { showMyRooms = true }
+                    )
+                }
             }
         }
     }
@@ -114,6 +174,7 @@ fun RoomListScreen(
     onLogoutClick: () -> Unit,
     onProfileClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     var isFilterExpanded by remember { mutableStateOf(false) }
     
     Scaffold(
@@ -174,7 +235,35 @@ fun RoomListScreen(
                     title = room.title ?: "Sin título",
                     description = room.description ?: "Sin descripción",
                     price = "$${room.price?.toInt() ?: 0}",
-                    onViewMoreClick = { onRoomClick(room) }
+                    roomId = room.id,
+                    onViewMoreClick = { onRoomClick(room) },
+                    onShareClick = { roomId ->
+                        val webUrl = "https://prototype-delta-vert.vercel.app/cuarto/$roomId"
+                        val deepLinkUrl = "rantu://cuarto/$roomId"
+                        val shareText = """
+                            🏠 ${room.title}
+                            💰 $${room.price}/mes
+                            
+                            ${room.description?.take(100)}...
+                            
+                            Ver más detalles:
+                            $webUrl
+                            
+                            O abre en la app:
+                            $deepLinkUrl
+                        """.trimIndent()
+                        
+                        val shareIntent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, shareText)
+                            putExtra(Intent.EXTRA_TITLE, "Compartir cuarto")
+                            type = "text/plain"
+                        }
+                        
+                        context.startActivity(
+                            Intent.createChooser(shareIntent, "Compartir cuarto via")
+                        )
+                    }
                 )
             }
             
