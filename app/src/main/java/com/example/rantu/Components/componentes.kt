@@ -351,7 +351,9 @@ fun RoomCard(
     title: String,
     description: String,
     price: String,
-    onViewMoreClick: () -> Unit // <-- AÑADE ESTE PARÁMETRO
+    roomId: Int? = null,
+    onViewMoreClick: () -> Unit,
+    onShareClick: ((Int) -> Unit)? = null
 ) {
     Card(
         modifier = Modifier
@@ -392,18 +394,32 @@ fun RoomCard(
                         Text(price, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6))
                         Text("por mes", fontSize = 12.sp, color = Color.Black)
                     }
-                    //if (isAvailable) {
-                    //    StatusChip("Disponible")
-                    //} else {
-                    //    StatusChip("No disponible")
-                    //}
-                    // Modifica el Button
-                    Button(
-                        onClick = onViewMoreClick, // <-- USA LA LAMBDA AQUÍ
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text("Ver más →")
+                    
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Botón compartir (si está disponible)
+                        if (onShareClick != null && roomId != null) {
+                            IconButton(
+                                onClick = { onShareClick(roomId) },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    painter = androidx.compose.ui.res.painterResource(
+                                        id = android.R.drawable.ic_menu_share
+                                    ),
+                                    contentDescription = "Compartir",
+                                    tint = Color(0xFF6B7280)
+                                )
+                            }
+                        }
+                        
+                        // Botón Ver más
+                        Button(
+                            onClick = onViewMoreClick,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Ver más →")
+                        }
                     }
                 }
             }
