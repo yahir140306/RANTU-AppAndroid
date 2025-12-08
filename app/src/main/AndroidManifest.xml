@@ -14,6 +14,10 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28"
         tools:ignore="ScopedStorage" />
+    
+    <!-- Permisos para ubicación (GPS y mapa) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -77,6 +81,11 @@
                       android:pathPrefix="/" />
             </intent-filter>
         </activity>
+        
+        <!-- Google Maps API Key -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBVj02-8c5tXs9B5sps8ZWOn6COrnF94mI" />
     </application>
 
 </manifest>

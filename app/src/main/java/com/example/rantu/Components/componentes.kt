@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,8 +22,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -100,8 +103,10 @@ fun FilterBar(
     onToggle: () -> Unit,
     minPrice: String,
     maxPrice: String,
+    soloDisponibles: Boolean = true,
     onMinPriceChange: (String) -> Unit,
     onMaxPriceChange: (String) -> Unit,
+    onSoloDisponiblesChange: (Boolean) -> Unit = {},
     onApplyFilter: () -> Unit,
     onClearFilter: () -> Unit,
     isFilterActive: Boolean,
@@ -248,6 +253,34 @@ fun FilterBar(
                     
                     Spacer(modifier = Modifier.height(20.dp))
                     
+                    // Filtro de Disponibilidad
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            "Solo cuartos disponibles",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF374151)
+                        )
+                        Switch(
+                            checked = soloDisponibles,
+                            onCheckedChange = onSoloDisponiblesChange,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color(0xFF10B981),
+                                checkedTrackColor = Color(0xFF86EFAC),
+                                uncheckedThumbColor = Color(0xFF9CA3AF),
+                                uncheckedTrackColor = Color(0xFFE5E7EB)
+                            )
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
                     // Botones de Acción
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -352,6 +385,8 @@ fun RoomCard(
     description: String,
     price: String,
     roomId: Int? = null,
+    latitude: Double? = null,
+    longitude: Double? = null,
     onViewMoreClick: () -> Unit,
     onShareClick: ((Int) -> Unit)? = null
 ) {
@@ -374,9 +409,11 @@ fun RoomCard(
                     contentScale = ContentScale.Crop
                 )
 
-                if (isAvailable) {
-                    StatusChip(text = "Disponible")
-                }
+                // Mostrar chip de estado (disponible o no disponible)
+                StatusChip(
+                    text = if (isAvailable) "Disponible" else "No disponible",
+                    isAvailable = isAvailable
+                )
             }
 
             Column(modifier = Modifier.padding(16.dp)) {
@@ -427,25 +464,94 @@ fun RoomCard(
     }
 }
 
-
-// Pequeño chip para el estado "Disponible"
+// Vista previa del mapa con OSMDroid
 @Composable
-fun StatusChip(text: String) {
+fun MapPreview(
+    latitude: Double,
+    longitude: Double,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        val position = com.google.android.gms.maps.model.LatLng(latitude, longitude)
+        val cameraPositionState = com.google.maps.android.compose.rememberCameraPositionState {
+            this.position = com.google.android.gms.maps.model.CameraPosition.fromLatLngZoom(
+                position,
+                14f
+            )
+        }
+        
+        com.google.maps.android.compose.GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState,
+            uiSettings = com.google.maps.android.compose.MapUiSettings(
+                zoomControlsEnabled = false,
+                scrollGesturesEnabled = false,
+                zoomGesturesEnabled = false,
+                tiltGesturesEnabled = false,
+                rotationGesturesEnabled = false
+            )
+        ) {
+            com.google.maps.android.compose.Marker(
+                state = com.google.maps.android.compose.rememberMarkerState(position = position)
+            )
+        }
+        
+        // Overlay semi-transparente para indicar que es una vista previa
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                color = Color.White.copy(alpha = 0.9f),
+                shape = RoundedCornerShape(4.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = Color(0xFF3B82F6),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        "Ver ubicación completa",
+                        fontSize = 12.sp,
+                        color = Color(0xFF3B82F6),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+// Pequeño chip para el estado "Disponible" o "No disponible"
+@Composable
+fun StatusChip(text: String, isAvailable: Boolean = true) {
     Row(
         modifier = Modifier
             .padding(12.dp)
-            .background(Color(0xFF16A34A), shape = RoundedCornerShape(50))
+            .background(
+                if (isAvailable) Color(0xFF16A34A) else Color(0xFFDC2626),
+                shape = RoundedCornerShape(50)
+            )
             .padding(horizontal = 10.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Default.Check,
+            imageVector = if (isAvailable) Icons.Default.Check else Icons.Default.Close,
             contentDescription = null,
-            tint = Color.Black,
+            tint = Color.White,
             modifier = Modifier.size(16.dp)
         )
         Spacer(modifier = Modifier.width(4.dp))
-        Text(text, color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Text(text, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
 }
 

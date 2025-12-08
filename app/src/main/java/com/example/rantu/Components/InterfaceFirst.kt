@@ -55,6 +55,12 @@ fun ViewFist(
     // Estado para mostrar "Editar Cuarto"
     var roomToEdit by remember { mutableStateOf<Room?>(null) }
     
+    // Estado para Location Picker desde AddRoom
+    var showLocationPicker by remember { mutableStateOf(false) }
+    var locationPickerInitialLat by remember { mutableStateOf<Double?>(null) }
+    var locationPickerInitialLng by remember { mutableStateOf<Double?>(null) }
+    var onLocationSelected by remember { mutableStateOf<((Double, Double) -> Unit)?>(null) }
+    
     // Manejar deep link
     LaunchedEffect(deepLinkRoomId) {
         if (deepLinkRoomId != null) {
@@ -68,6 +74,25 @@ fun ViewFist(
     }
 
     when {
+        showLocationPicker -> {
+            BackHandler { 
+                showLocationPicker = false
+                onLocationSelected = null
+            }
+            com.example.rantu.ui.screens.LocationPickerScreen(
+                initialLatitude = locationPickerInitialLat,
+                initialLongitude = locationPickerInitialLng,
+                onLocationSelected = { lat, lng ->
+                    onLocationSelected?.invoke(lat, lng)
+                    showLocationPicker = false
+                    onLocationSelected = null
+                },
+                onNavigateBack = { 
+                    showLocationPicker = false
+                    onLocationSelected = null
+                }
+            )
+        }
         showAddRoom -> {
             BackHandler { showAddRoom = false }
             // Mostrar pantalla de Agregar Cuarto
@@ -78,6 +103,12 @@ fun ViewFist(
                     showMyRooms = true
                     // Recargar cuartos
                     roomViewModel.fetchRooms()
+                },
+                onOpenLocationPicker = { initialLat, initialLng, callback ->
+                    locationPickerInitialLat = initialLat
+                    locationPickerInitialLng = initialLng
+                    onLocationSelected = callback
+                    showLocationPicker = true
                 }
             )
         }
@@ -92,6 +123,12 @@ fun ViewFist(
                     showMyRooms = true
                     // Recargar cuartos
                     roomViewModel.fetchRooms()
+                },
+                onOpenLocationPicker = { initialLat, initialLng, callback ->
+                    locationPickerInitialLat = initialLat
+                    locationPickerInitialLng = initialLng
+                    onLocationSelected = callback
+                    showLocationPicker = true
                 }
             )
         }
@@ -101,7 +138,11 @@ fun ViewFist(
             MyRoomsScreen(
                 onBack = { showMyRooms = false },
                 onAddRoom = { showAddRoom = true },
-                onEditRoom = { room -> roomToEdit = room }
+                onEditRoom = { room -> roomToEdit = room },
+                onRoomUpdated = {
+                    // Recargar la lista principal cuando se actualiza un cuarto
+                    roomViewModel.fetchRooms()
+                }
             )
         }
         selectedRoom != null -> {
@@ -208,11 +249,15 @@ fun RoomListScreen(
                     onToggle = { isFilterExpanded = !isFilterExpanded },
                     minPrice = roomViewModel.minPrice.value,
                     maxPrice = roomViewModel.maxPrice.value,
+                    soloDisponibles = roomViewModel.soloDisponibles.value,
                     onMinPriceChange = { value ->
                         roomViewModel.updateMinPrice(value)
                     },
                     onMaxPriceChange = { value ->
                         roomViewModel.updateMaxPrice(value)
+                    },
+                    onSoloDisponiblesChange = { value ->
+                        roomViewModel.soloDisponibles.value = value
                     },
                     onApplyFilter = {
                         roomViewModel.applyFilter()
@@ -236,6 +281,8 @@ fun RoomListScreen(
                     description = room.description ?: "Sin descripción",
                     price = "$${room.price?.toInt() ?: 0}",
                     roomId = room.id,
+                    latitude = room.latitud,
+                    longitude = room.longitud,
                     onViewMoreClick = { onRoomClick(room) },
                     onShareClick = { roomId ->
                         val webUrl = "https://prototype-delta-vert.vercel.app/cuarto/$roomId"

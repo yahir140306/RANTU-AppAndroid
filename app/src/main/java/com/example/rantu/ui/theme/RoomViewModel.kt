@@ -30,6 +30,7 @@ class RoomViewModel : ViewModel() {
     // Estados para el filtro de precio
     val minPrice = mutableStateOf("")
     val maxPrice = mutableStateOf("")
+    val soloDisponibles = mutableStateOf(true)
     val isFilterActive = mutableStateOf(false)
 
     init {
@@ -74,14 +75,16 @@ class RoomViewModel : ViewModel() {
         val min = minPrice.value.toDoubleOrNull() ?: 0.0
         val max = maxPrice.value.toDoubleOrNull() ?: Double.MAX_VALUE
         
-        rooms.value = if (minPrice.value.isEmpty() && maxPrice.value.isEmpty()) {
+        rooms.value = if (minPrice.value.isEmpty() && maxPrice.value.isEmpty() && soloDisponibles.value) {
             isFilterActive.value = false
             allRooms.value
         } else {
             isFilterActive.value = true
             allRooms.value.filter { room ->
                 val price = room.price ?: 0.0
-                price >= min && price <= max
+                val cumplePrecio = price >= min && price <= max
+                val cumpleDisponibilidad = !soloDisponibles.value || (room.isAvailable == true)
+                cumplePrecio && cumpleDisponibilidad
             }
         }
     }
@@ -90,6 +93,7 @@ class RoomViewModel : ViewModel() {
     fun clearFilter() {
         minPrice.value = ""
         maxPrice.value = ""
+        soloDisponibles.value = true
         isFilterActive.value = false
         rooms.value = allRooms.value
     }

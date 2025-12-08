@@ -12,6 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.material.icons.filled.Star
@@ -145,6 +147,39 @@ fun RoomDetailScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Indicador de disponibilidad
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    ) {
+                        val isAvailable = room.isAvailable ?: true
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    if (isAvailable) Color(0xFF16A34A) else Color(0xFFDC2626),
+                                    shape = RoundedCornerShape(50)
+                                )
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = if (isAvailable) Icons.Default.Check else Icons.Default.Close,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = if (isAvailable) "Disponible" else "No disponible",
+                                    color = Color.White,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                    
                     Text(
                         text = "$${room.price?.toInt() ?: 0} / mes",
                         fontSize = 22.sp,
@@ -156,6 +191,8 @@ fun RoomDetailScreen(
             
             // Botones de acción (WhatsApp, Compartir y Descargar)
             item {
+                val isAvailable = room.isAvailable ?: true
+                
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -185,7 +222,7 @@ fun RoomDetailScreen(
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF25D366)
                             ),
-                            enabled = !room.celular.isNullOrEmpty()
+                            enabled = !room.celular.isNullOrEmpty() && isAvailable
                         ) {
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(
@@ -252,7 +289,8 @@ fun RoomDetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF10B981)
-                        )
+                        ),
+                        enabled = isAvailable
                     ) {
                         Icon(
                             imageVector = Icons.Default.Info,
@@ -341,6 +379,95 @@ fun RoomDetailScreen(
                 }
             }
             
+            // Mapa de ubicación
+            if (room.latitud != null && room.longitud != null) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                "📍 Ubicación en el Mapa",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(250.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                            ) {
+                                val position = com.google.android.gms.maps.model.LatLng(
+                                    room.latitud,
+                                    room.longitud
+                                )
+                                val mapCameraPositionState = com.google.maps.android.compose.rememberCameraPositionState {
+                                    this.position = com.google.android.gms.maps.model.CameraPosition.fromLatLngZoom(
+                                        position,
+                                        15f
+                                    )
+                                }
+                                
+                                com.google.maps.android.compose.GoogleMap(
+                                    modifier = Modifier.fillMaxSize(),
+                                    cameraPositionState = mapCameraPositionState,
+                                    uiSettings = com.google.maps.android.compose.MapUiSettings(
+                                        zoomControlsEnabled = true,
+                                        scrollGesturesEnabled = true,
+                                        zoomGesturesEnabled = true
+                                    )
+                                ) {
+                                    com.google.maps.android.compose.Marker(
+                                        state = com.google.maps.android.compose.rememberMarkerState(position = position),
+                                        title = room.title ?: "Cuarto"
+                                    )
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = "Coordenadas: ${"%.6f".format(room.latitud)}, ${"%.6f".format(room.longitud)}",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                            
+                            // Botón para abrir en Google Maps
+                            Button(
+                                onClick = {
+                                    val gmmIntentUri = Uri.parse("geo:${room.latitud},${room.longitud}?q=${room.latitud},${room.longitud}(${room.title})")
+                                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                                    mapIntent.setPackage("com.google.android.apps.maps")
+                                    
+                                    if (mapIntent.resolveActivity(context.packageManager) != null) {
+                                        context.startActivity(mapIntent)
+                                    } else {
+                                        // Si Google Maps no está instalado, usar el navegador
+                                        val browserIntent = Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse("https://www.google.com/maps/search/?api=1&query=${room.latitud},${room.longitud}")
+                                        )
+                                        context.startActivity(browserIntent)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4285F4)
+                                )
+                            ) {
+                                Text("Abrir en Google Maps")
+                            }
+                        }
+                    }
+                }
+            }
+            
             // Sección de Comentarios y Calificaciones
             item {
                 Card(
@@ -387,14 +514,16 @@ fun RoomDetailScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         
                         // Botón para agregar comentario
+                        val isAvailableForComments = room.isAvailable ?: true
                         Button(
                             onClick = { showCommentDialog = true },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF3B82F6)
-                            )
+                            ),
+                            enabled = isAvailableForComments
                         ) {
-                            Text("Deja tu comentario")
+                            Text(if (isAvailableForComments) "Deja tu comentario" else "No disponible para comentar")
                         }
                     }
                 }
@@ -452,6 +581,7 @@ fun RoomDetailScreen(
             
             // Botón de WhatsApp
             item {
+                val isAvailableBottom = room.isAvailable ?: true
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = {
@@ -469,7 +599,7 @@ fun RoomDetailScreen(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF25D366)
                     ),
-                    enabled = !room.celular.isNullOrBlank()
+                    enabled = !room.celular.isNullOrBlank() && isAvailableBottom
                 ) {
                     Text("📱 Contactar al Propietario", fontSize = 16.sp)
                 }

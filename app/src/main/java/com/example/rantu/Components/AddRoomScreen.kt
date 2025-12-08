@@ -36,6 +36,7 @@ import com.example.rantu.ui.AddRoomViewModel
 fun AddRoomScreen(
     onBack: () -> Unit,
     onSuccess: () -> Unit,
+    onOpenLocationPicker: (Double?, Double?, (Double, Double) -> Unit) -> Unit = { _, _, _ -> },
     addRoomViewModel: AddRoomViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -224,6 +225,92 @@ fun AddRoomScreen(
                         fontSize = 12.sp,
                         color = Color.Gray,
                         modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Ubicación en mapa
+                    Text(
+                        text = "📍 Ubicación en el Mapa",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    if (addRoomViewModel.latitud.value != null && addRoomViewModel.longitud.value != null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFE8F5E9)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "✅ Ubicación seleccionada",
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF2E7D32)
+                                    )
+                                    Text(
+                                        text = "${"%.6f".format(addRoomViewModel.latitud.value)}, ${"%.6f".format(addRoomViewModel.longitud.value)}",
+                                        fontSize = 12.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        addRoomViewModel.latitud.value = null
+                                        addRoomViewModel.longitud.value = null
+                                    }
+                                ) {
+                                    Icon(Icons.Default.Close, "Quitar ubicación", tint = Color(0xFF2E7D32))
+                                }
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Button(
+                        onClick = {
+                            onOpenLocationPicker(
+                                addRoomViewModel.latitud.value,
+                                addRoomViewModel.longitud.value
+                            ) { lat, lng ->
+                                addRoomViewModel.latitud.value = lat
+                                addRoomViewModel.longitud.value = lng
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF667EEA)
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            if (addRoomViewModel.latitud.value != null) 
+                                "Cambiar Ubicación en Mapa" 
+                            else 
+                                "Seleccionar Ubicación en Mapa"
+                        )
+                    }
+                    
+                    Text(
+                        text = "Opcional: Ayuda a los interesados a encontrar tu cuarto más fácilmente",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }

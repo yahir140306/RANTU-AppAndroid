@@ -36,7 +36,8 @@ fun MyRoomsScreen(
     onBack: () -> Unit,
     onAddRoom: () -> Unit = {},
     onEditRoom: (Room) -> Unit = {},
-    userRoomsViewModel: UserRoomsViewModel = viewModel()
+    userRoomsViewModel: UserRoomsViewModel = viewModel(),
+    onRoomUpdated: () -> Unit = {}
 ) {
     val rooms = userRoomsViewModel.rooms.value
     val isLoading = userRoomsViewModel.isLoading.value
@@ -271,6 +272,7 @@ fun MyRoomsScreen(
                                     showDeleteDialog = false
                                     roomToDelete = null
                                     deleteError = null
+                                    onRoomUpdated() // Recargar lista principal
                                 },
                                 onError = { error ->
                                     deleteError = error
@@ -339,6 +341,7 @@ fun MyRoomsScreen(
                                     showToggleDialog = false
                                     roomToToggle = null
                                     toggleError = null
+                                    onRoomUpdated() // Recargar lista principal
                                 },
                                 onError = { error ->
                                     toggleError = error

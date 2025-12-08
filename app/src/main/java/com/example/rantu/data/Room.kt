@@ -29,6 +29,12 @@ data class Room(
     @SerialName("ubicacion")
     val ubicacion: String? = null,
 
+    @SerialName("latitud")
+    val latitud: Double? = null,
+    
+    @SerialName("longitud")
+    val longitud: Double? = null,
+
     // Algunas tablas usan 'activo' o 'is_available' — aceptamos ambas en la lógica de la app
     @SerialName("activo")
     val isAvailable: Boolean? = true,

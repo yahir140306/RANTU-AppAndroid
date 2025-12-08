@@ -1,6 +1,10 @@
 package com.example.rantu.ui
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -13,6 +17,7 @@ import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
@@ -26,6 +31,10 @@ class AddRoomViewModel : ViewModel() {
     val celular = mutableStateOf("")
     val caracteristicas = mutableStateOf("")
     val ubicacion = mutableStateOf("")
+    
+    // Estados de ubicación
+    val latitud = mutableStateOf<Double?>(null)
+    val longitud = mutableStateOf<Double?>(null)
     
     // Estados de las imágenes
     val imagen1Uri = mutableStateOf<Uri?>(null)
@@ -59,37 +68,112 @@ class AddRoomViewModel : ViewModel() {
         }
     }
     
+    // Comprimir imagen y eliminar metadatos EXIF
+    private suspend fun compressImage(context: Context, uri: Uri): ByteArray {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Leer la imagen original
+                val inputStream = context.contentResolver.openInputStream(uri)
+                    ?: throw IllegalStateException("No se pudo leer la imagen")
+                
+                // Decodificar bitmap
+                val originalBitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream.close()
+                
+                if (originalBitmap == null) {
+                    throw IllegalStateException("No se pudo decodificar la imagen")
+                }
+                
+                // Obtener orientación EXIF para corregirla
+                val exifInputStream = context.contentResolver.openInputStream(uri)
+                val exif = exifInputStream?.let { ExifInterface(it) }
+                exifInputStream?.close()
+                
+                val orientation = exif?.getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                ) ?: ExifInterface.ORIENTATION_NORMAL
+                
+                // Rotar imagen si es necesario
+                val rotatedBitmap = when (orientation) {
+                    ExifInterface.ORIENTATION_ROTATE_90 -> rotateBitmap(originalBitmap, 90f)
+                    ExifInterface.ORIENTATION_ROTATE_180 -> rotateBitmap(originalBitmap, 180f)
+                    ExifInterface.ORIENTATION_ROTATE_270 -> rotateBitmap(originalBitmap, 270f)
+                    else -> originalBitmap
+                }
+                
+                // Calcular dimensiones reducidas (máximo 1920x1920)
+                val maxDimension = 1920
+                val scaledBitmap = if (rotatedBitmap.width > maxDimension || rotatedBitmap.height > maxDimension) {
+                    val scale = minOf(
+                        maxDimension.toFloat() / rotatedBitmap.width,
+                        maxDimension.toFloat() / rotatedBitmap.height
+                    )
+                    val newWidth = (rotatedBitmap.width * scale).toInt()
+                    val newHeight = (rotatedBitmap.height * scale).toInt()
+                    Bitmap.createScaledBitmap(rotatedBitmap, newWidth, newHeight, true)
+                } else {
+                    rotatedBitmap
+                }
+                
+                // Comprimir imagen con calidad progresiva hasta que sea menor a 5MB
+                var quality = 90
+                var compressedBytes: ByteArray
+                val maxSize = 5 * 1024 * 1024 // 5MB
+                
+                do {
+                    val outputStream = ByteArrayOutputStream()
+                    scaledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+                    compressedBytes = outputStream.toByteArray()
+                    outputStream.close()
+                    
+                    if (compressedBytes.size > maxSize && quality > 10) {
+                        quality -= 10
+                    } else {
+                        break
+                    }
+                } while (compressedBytes.size > maxSize && quality > 10)
+                
+                // Liberar recursos
+                if (rotatedBitmap != originalBitmap) {
+                    rotatedBitmap.recycle()
+                }
+                if (scaledBitmap != rotatedBitmap) {
+                    scaledBitmap.recycle()
+                }
+                originalBitmap.recycle()
+                
+                println("[AddRoomViewModel] Imagen comprimida: ${compressedBytes.size / 1024}KB (calidad: $quality%)")
+                compressedBytes
+            } catch (e: Exception) {
+                println("[AddRoomViewModel] Error al comprimir imagen: ${e.message}")
+                throw e
+            }
+        }
+    }
+    
+    // Rotar bitmap
+    private fun rotateBitmap(bitmap: Bitmap, degrees: Float): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(degrees)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
+    
     // Subir imagen a Supabase Storage
     private suspend fun uploadImage(context: Context, uri: Uri, imageName: String): String? {
         return withContext(Dispatchers.IO) {
             try {
-                // Leer el contenido de la imagen
-                val inputStream = context.contentResolver.openInputStream(uri)
-                    ?: return@withContext null
-                
-                val bytes = inputStream.readBytes()
-                inputStream.close()
-                
-                // Validar tamaño (5MB max)
-                val maxSize = 5 * 1024 * 1024
-                if (bytes.size > maxSize) {
-                    throw IllegalStateException("La imagen $imageName es muy grande. Máximo 5MB")
-                }
+                // Comprimir la imagen y eliminar metadatos
+                val compressedBytes = compressImage(context, uri)
                 
                 // Generar nombre único
                 val timestamp = System.currentTimeMillis()
                 val randomStr = (1..6).map { ('a'..'z').random() }.joinToString("")
-                val extension = when {
-                    uri.toString().contains(".jpg", ignoreCase = true) -> "jpg"
-                    uri.toString().contains(".jpeg", ignoreCase = true) -> "jpeg"
-                    uri.toString().contains(".png", ignoreCase = true) -> "png"
-                    else -> "jpg"
-                }
-                val fileName = "${imageName}_${timestamp}_${randomStr}.$extension"
+                val fileName = "${imageName}_${timestamp}_${randomStr}.jpg"
                 
                 // Subir a Supabase Storage
                 val bucket = SupabaseClient.client.storage.from("cuartos-images")
-                bucket.upload(fileName, bytes)
+                bucket.upload(fileName, compressedBytes)
                 
                 // Obtener URL pública
                 val publicUrl = bucket.publicUrl(fileName)
@@ -148,6 +232,8 @@ class AddRoomViewModel : ViewModel() {
                     celular = celular.value.trim(),
                     caracteristicas = caracteristicas.value.trim(),
                     ubicacion = ubicacion.value.trim(),
+                    latitud = latitud.value,
+                    longitud = longitud.value,
                     imagen_1 = imagen1Url,
                     imagen_2 = imagen2Url,
                     imagen_3 = imagen3Url,
@@ -187,6 +273,8 @@ class AddRoomViewModel : ViewModel() {
         celular.value = ""
         caracteristicas.value = ""
         ubicacion.value = ""
+        latitud.value = null
+        longitud.value = null
         imagen1Uri.value = null
         imagen2Uri.value = null
         imagen3Uri.value = null

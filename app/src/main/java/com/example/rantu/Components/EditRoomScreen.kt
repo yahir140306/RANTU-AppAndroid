@@ -39,6 +39,7 @@ fun EditRoomScreen(
     room: Room,
     onBack: () -> Unit,
     onSuccess: () -> Unit,
+    onOpenLocationPicker: (Double?, Double?, (Double, Double) -> Unit) -> Unit = { _, _, _ -> },
     editRoomViewModel: EditRoomViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -185,6 +186,52 @@ fun EditRoomScreen(
                             color = Color.Gray,
                             modifier = Modifier.padding(start = 16.dp, top = 4.dp)
                         )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Disponibilidad
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = if (editRoomViewModel.disponible.value) 
+                                        Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = if (editRoomViewModel.disponible.value) 
+                                        "✅ Cuarto Disponible" else "❌ No Disponible",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (editRoomViewModel.disponible.value) 
+                                        Color(0xFF2E7D32) else Color(0xFFC62828)
+                                )
+                                Text(
+                                    text = if (editRoomViewModel.disponible.value)
+                                        "Los usuarios pueden ver y contactarte"
+                                    else
+                                        "El cuarto no aparecerá en búsquedas",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                            Switch(
+                                checked = editRoomViewModel.disponible.value,
+                                onCheckedChange = { editRoomViewModel.disponible.value = it },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color(0xFF4CAF50),
+                                    checkedTrackColor = Color(0xFFC8E6C9),
+                                    uncheckedThumbColor = Color(0xFFEF5350),
+                                    uncheckedTrackColor = Color(0xFFFFCDD2)
+                                )
+                            )
+                        }
                     }
                 }
                 
@@ -242,6 +289,92 @@ fun EditRoomScreen(
                             fontSize = 12.sp,
                             color = Color.Gray,
                             modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Ubicación en mapa
+                        Text(
+                            text = "📍 Ubicación en el Mapa",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        
+                        if (editRoomViewModel.latitud.value != null && editRoomViewModel.longitud.value != null) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFFE8F5E9)
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = "✅ Ubicación seleccionada",
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF2E7D32)
+                                        )
+                                        Text(
+                                            text = "${"%.6f".format(editRoomViewModel.latitud.value)}, ${"%.6f".format(editRoomViewModel.longitud.value)}",
+                                            fontSize = 12.sp,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            editRoomViewModel.latitud.value = null
+                                            editRoomViewModel.longitud.value = null
+                                        }
+                                    ) {
+                                        Icon(Icons.Default.Close, "Quitar ubicación", tint = Color(0xFF2E7D32))
+                                    }
+                                }
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Button(
+                            onClick = {
+                                onOpenLocationPicker(
+                                    editRoomViewModel.latitud.value,
+                                    editRoomViewModel.longitud.value
+                                ) { lat, lng ->
+                                    editRoomViewModel.latitud.value = lat
+                                    editRoomViewModel.longitud.value = lng
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF667EEA)
+                            )
+                        ) {
+                            Icon(
+                                imageVector = if (editRoomViewModel.latitud.value != null) Icons.Default.Edit else Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                if (editRoomViewModel.latitud.value != null) 
+                                    "Cambiar Ubicación en Mapa" 
+                                else 
+                                    "Agregar Ubicación en Mapa"
+                            )
+                        }
+                        
+                        Text(
+                            text = "Opcional: Ayuda a los interesados a encontrar tu cuarto más fácilmente",
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(top = 4.dp)
                         )
                     }
                 }

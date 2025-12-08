@@ -15,6 +15,8 @@ data class RoomInsert(
     val celular: String? = null,
     val caracteristicas: String? = null,
     val ubicacion: String? = null,
+    val latitud: Double? = null,
+    val longitud: Double? = null,
     val imagen_1: String? = null,
     val imagen_2: String? = null,
     val imagen_3: String? = null,
@@ -30,9 +32,12 @@ data class RoomUpdate(
     val celular: String? = null,
     val caracteristicas: String? = null,
     val ubicacion: String? = null,
+    val latitud: Double? = null,
+    val longitud: Double? = null,
     val imagen_1: String? = null,
     val imagen_2: String? = null,
-    val imagen_3: String? = null
+    val imagen_3: String? = null,
+    val activo: Boolean? = null
 )
 
 class RoomRepository {
@@ -54,7 +59,7 @@ class RoomRepository {
         mapped
     }
 
-    // Obtiene los cuartos del usuario autenticado
+    // Obtiene los cuartos del usuario autenticado (todos, activos e inactivos)
     suspend fun getUserRooms(): List<Room> = withContext(Dispatchers.IO) {
         val user = SupabaseClient.client.auth.currentUserOrNull()
             ?: throw IllegalStateException("Usuario no autenticado")
@@ -63,7 +68,6 @@ class RoomRepository {
             .select {
                 filter {
                     eq("user_id", user.id)
-                    eq("activo", true)
                 }
             }
             .decodeList<Room>()

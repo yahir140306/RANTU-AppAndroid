@@ -25,6 +25,11 @@ class EditRoomViewModel : ViewModel() {
     val celular = mutableStateOf("")
     val caracteristicas = mutableStateOf("")
     val ubicacion = mutableStateOf("")
+    val disponible = mutableStateOf(true)
+    
+    // Estados de ubicación
+    val latitud = mutableStateOf<Double?>(null)
+    val longitud = mutableStateOf<Double?>(null)
     
     // URLs de imágenes existentes
     val imagen1UrlExisting = mutableStateOf<String?>(null)
@@ -67,6 +72,12 @@ class EditRoomViewModel : ViewModel() {
                 celular.value = room.celular ?: ""
                 caracteristicas.value = room.caracteristicas ?: ""
                 ubicacion.value = room.ubicacion ?: ""
+                // Asegurar que disponible se sincroniza correctamente con activo
+                disponible.value = room.isAvailable ?: true
+                latitud.value = room.latitud
+                longitud.value = room.longitud
+                
+                println("[EditRoomViewModel] Loaded room - activo: ${room.isAvailable}, disponible: ${disponible.value}")
                 
                 // URLs de imágenes existentes
                 imagen1UrlExisting.value = room.imagen1
@@ -184,6 +195,9 @@ class EditRoomViewModel : ViewModel() {
                 
                 // Actualizar cuarto
                 uploadProgress.value = "Actualizando cuarto..."
+                
+                println("[EditRoomViewModel] Updating with latitud: ${latitud.value}, longitud: ${longitud.value}")
+                
                 val roomData = RoomUpdate(
                     titulo = titulo.value.trim(),
                     descripcion = descripcion.value.trim(),
@@ -191,9 +205,12 @@ class EditRoomViewModel : ViewModel() {
                     celular = celular.value.trim(),
                     caracteristicas = caracteristicas.value.trim(),
                     ubicacion = ubicacion.value.trim(),
+                    latitud = latitud.value,
+                    longitud = longitud.value,
                     imagen_1 = imagen1Url,
                     imagen_2 = imagen2Url,
-                    imagen_3 = imagen3Url
+                    imagen_3 = imagen3Url,
+                    activo = disponible.value
                 )
                 
                 repository.updateRoom(roomId, roomData)
