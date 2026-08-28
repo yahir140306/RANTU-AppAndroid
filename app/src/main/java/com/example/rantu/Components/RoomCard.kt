@@ -183,23 +183,29 @@ fun DownloadableRoomCard(
 // Función para guardar bitmap
 fun saveBitmapToGallery(context: Context, bitmap: Bitmap, filename: String): Boolean {
     return try {
+        var success = false
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             val resolver = context.contentResolver
             val contentValues = android.content.ContentValues().apply {
                 put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, filename)
                 put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/png")
                 put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/RANTU")
+                put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
             }
             val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
             if (uri != null) {
                 resolver.openOutputStream(uri)?.use { outputStream ->
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
                 }
-                return true
+                contentValues.clear()
+                contentValues.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(uri, contentValues, null, null)
+                success = true
             }
-            return false
-        } else {
-            // Fallback para Android 9 o inferior (sin necesidad de permisos peligrosos)
+        }
+        
+        // Fallback definitivo si MediaStore falla (o si es API <= 28)
+        if (!success) {
             val picturesDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES)
             val rantuDir = java.io.File(picturesDir, "RANTU")
             if (!rantuDir.exists()) rantuDir.mkdirs()
@@ -216,8 +222,10 @@ fun saveBitmapToGallery(context: Context, bitmap: Bitmap, filename: String): Boo
                 arrayOf("image/png"),
                 null
             )
-            return true
+            success = true
         }
+        
+        return success
     } catch (e: Exception) {
         e.printStackTrace()
         return false
