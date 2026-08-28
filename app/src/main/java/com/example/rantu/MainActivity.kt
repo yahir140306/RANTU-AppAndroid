@@ -16,6 +16,8 @@ import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.handleDeeplinks
 import kotlinx.coroutines.launch
 
+import com.example.rantu.Components.RegisterScreen
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +31,7 @@ class MainActivity : ComponentActivity() {
                 var isLoggedIn by remember { mutableStateOf(false) }
                 var userEmail by remember { mutableStateOf<String?>(null) }
                 var showLoginScreen by remember { mutableStateOf(false) }
+                var showRegisterScreen by remember { mutableStateOf(false) }
                 var deepLinkRoomId by remember { mutableStateOf<Int?>(null) }
 
                 // Procesar deep links de cuartos
@@ -46,20 +49,30 @@ class MainActivity : ComponentActivity() {
                         isLoggedIn = session != null
                         userEmail = session?.user?.email
                         
-                        // Si se autentica exitosamente, cerrar pantalla de login
-                        if (isLoggedIn && showLoginScreen) {
+                        // Si se autentica exitosamente, cerrar pantalla de login/registro
+                        if (isLoggedIn && (showLoginScreen || showRegisterScreen)) {
                             showLoginScreen = false
+                            showRegisterScreen = false
                         }
                     }
                 }
 
                 if (showLoginScreen) {
                     LoginScreen(
-                        onLoginSuccess = {
-                            // No hacemos nada aquí, el LaunchedEffect detectará el cambio de sesión
-                        },
-                        onBack = {
+                        onLoginSuccess = { },
+                        onBack = { showLoginScreen = false },
+                        onRegisterClick = { 
                             showLoginScreen = false
+                            showRegisterScreen = true 
+                        }
+                    )
+                } else if (showRegisterScreen) {
+                    RegisterScreen(
+                        onRegisterSuccess = { },
+                        onBack = { showRegisterScreen = false },
+                        onLoginClick = { 
+                            showRegisterScreen = false
+                            showLoginScreen = true 
                         }
                     )
                 } else {

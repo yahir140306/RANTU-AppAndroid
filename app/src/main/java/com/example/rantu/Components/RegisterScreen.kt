@@ -25,10 +25,10 @@ import com.example.rantu.ui.LoginViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit,
+fun RegisterScreen(
+    onRegisterSuccess: () -> Unit,
     onBack: () -> Unit,
-    onRegisterClick: () -> Unit = {},
+    onLoginClick: () -> Unit = {},
     viewModel: LoginViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
@@ -103,7 +103,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    text = "Inicia sesión",
+                    text = "Regístrate",
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF111827)
@@ -112,7 +112,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Accede a tu cuenta para continuar",
+                    text = "Crea una cuenta para publicar y calificar",
                     fontSize = 16.sp,
                     color = Color(0xFF6B7280),
                     textAlign = TextAlign.Center
@@ -281,7 +281,7 @@ fun LoginScreen(
                                     )
                                 } else {
                                     Text(
-                                        "Iniciar sesión",
+                                        "Crear cuenta",
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.SemiBold
                                     )
@@ -316,13 +316,13 @@ fun LoginScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "¿No tienes una cuenta?",
+                        text = "¿Ya tienes una cuenta?",
                         fontSize = 13.sp,
                         color = Color(0xFF6B7280)
                     )
-                    TextButton(onClick = onRegisterClick) {
+                    TextButton(onClick = onLoginClick) {
                         Text(
-                            text = "Regístrate aquí",
+                            text = "Inicia sesión aquí",
                             fontSize = 13.sp,
                             color = Color(0xFF3B82F6),
                             fontWeight = FontWeight.Medium
