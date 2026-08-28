@@ -43,7 +43,9 @@ fun ViewFist(
     onLoginClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
     deepLinkRoomId: Int? = null,
-    onDeepLinkHandled: () -> Unit = {}
+    onDeepLinkHandled: () -> Unit = {},
+    isDarkMode: Boolean = false,
+    onThemeToggle: () -> Unit = {}
 ) {
     val rooms = roomViewModel.rooms.value
     val isLoading = roomViewModel.isLoading.value
@@ -238,7 +240,9 @@ fun RoomListScreen(
                 userEmail = userEmail,
                 onLoginClick = onLoginClick,
                 onLogoutClick = onLogoutClick,
-                onProfileClick = onProfileClick
+                onProfileClick = onProfileClick,
+                isDarkMode = isDarkMode,
+                onThemeToggle = onThemeToggle
             )
         },
     ) { innerPadding ->

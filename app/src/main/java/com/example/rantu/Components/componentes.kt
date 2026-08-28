@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
@@ -49,7 +50,9 @@ fun TopBar(
     userEmail: String? = null,
     onLoginClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    isDarkMode: Boolean = false,
+    onThemeToggle: () -> Unit = {}
 ) {
     TopAppBar(
         title = {
@@ -57,13 +60,20 @@ fun TopBar(
                 Icon(
                     imageVector = Icons.Default.Home,
                     contentDescription = "Inicio",
-                    tint = Color.Black
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("RANTU", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("RANTU", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
             }
         },
         actions = {
+            IconButton(onClick = onThemeToggle) {
+                Icon(
+                    imageVector = if (isDarkMode) Icons.Default.Info else Icons.Default.Info, // Placeholder if no lightbulb/moon
+                    contentDescription = "Cambiar tema",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
             if (isLoggedIn) {
                 // Mostrar email del usuario como botón clickeable
                 if (userEmail != null) {

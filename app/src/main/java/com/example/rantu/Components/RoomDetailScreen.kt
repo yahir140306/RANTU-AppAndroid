@@ -887,8 +887,11 @@ fun CommentCard(comment: Comment) {
 
 fun formatDate(dateString: String): String {
     return try {
+        // Supabase devuelve fechas en formato ISO 8601 UTC
         val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        val formatter = SimpleDateFormat("dd MMM yyyy", Locale("es", "ES"))
+        parser.timeZone = TimeZone.getTimeZone("UTC")
+        val formatter = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("es", "ES"))
+        formatter.timeZone = TimeZone.getDefault()
         val date = parser.parse(dateString)
         date?.let { formatter.format(it) } ?: dateString
     } catch (e: Exception) {

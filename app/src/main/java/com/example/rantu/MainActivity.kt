@@ -27,7 +27,16 @@ class MainActivity : ComponentActivity() {
         SupabaseClient.client.handleDeeplinks(intent)
         
         setContent {
-            RANTUTheme (darkTheme = false) {
+            // Cargar preferencia de tema oscuro
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val sharedPreferences = remember { context.getSharedPreferences("rantu_prefs", android.content.Context.MODE_PRIVATE) }
+            val systemTheme = androidx.compose.foundation.isSystemInDarkTheme()
+            
+            var isDarkMode by remember { 
+                mutableStateOf(sharedPreferences.getBoolean("dark_mode", systemTheme)) 
+            }
+
+            RANTUTheme (darkTheme = isDarkMode) {
                 var isLoggedIn by remember { mutableStateOf(false) }
                 var userEmail by remember { mutableStateOf<String?>(null) }
                 var showLoginScreen by remember { mutableStateOf(false) }
@@ -92,6 +101,11 @@ class MainActivity : ComponentActivity() {
                         deepLinkRoomId = deepLinkRoomId,
                         onDeepLinkHandled = {
                             deepLinkRoomId = null
+                        },
+                        isDarkMode = isDarkMode,
+                        onThemeToggle = {
+                            isDarkMode = !isDarkMode
+                            sharedPreferences.edit().putBoolean("dark_mode", isDarkMode).apply()
                         }
                     )
                 }
