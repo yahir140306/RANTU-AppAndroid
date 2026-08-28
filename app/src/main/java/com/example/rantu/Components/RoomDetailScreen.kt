@@ -90,6 +90,11 @@ fun RoomDetailScreen(
     val pagerState = rememberPagerState()
 
     if (showImageModal) {
+        val initialPage = remember(selectedImageUrl, images) { 
+            images.indexOf(selectedImageUrl).takeIf { it >= 0 } ?: 0 
+        }
+        val modalPagerState = rememberPagerState(initialPage = initialPage)
+        
         Dialog(onDismissRequest = { showImageModal = false }) {
             Box(
                 modifier = Modifier
@@ -97,12 +102,33 @@ fun RoomDetailScreen(
                     .clickable { showImageModal = false },
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
-                    model = selectedImageUrl,
-                    contentDescription = "Imagen Ampliada",
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Fit
-                )
+                HorizontalPager(
+                    count = images.size,
+                    state = modalPagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    AsyncImage(
+                        model = images[page],
+                        contentDescription = "Imagen Ampliada ${page + 1}",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { showImageModal = false },
+                        contentScale = ContentScale.Fit
+                    )
+                }
+                
+                // Indicador de página en el modal
+                if (images.size > 1) {
+                    HorizontalPagerIndicator(
+                        pagerState = modalPagerState,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(16.dp),
+                        activeColor = Color.White,
+                        inactiveColor = Color.White.copy(alpha = 0.5f)
+                    )
+                }
             }
         }
     }
