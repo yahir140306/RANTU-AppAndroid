@@ -83,7 +83,29 @@ fun RoomDetailScreen(
         ).ifEmpty { listOf(room.resolvedImageUrl()) }
     }
     
+    // Estado para modal de imagen
+    var showImageModal by remember { mutableStateOf(false) }
+    var selectedImageUrl by remember { mutableStateOf("") }
+    
     val pagerState = rememberPagerState()
+
+    if (showImageModal) {
+        Dialog(onDismissRequest = { showImageModal = false }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { showImageModal = false },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = selectedImageUrl,
+                    contentDescription = "Imagen Ampliada",
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -91,7 +113,7 @@ fun RoomDetailScreen(
                 title = { Text("Detalles del Cuarto") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Regresar")
                     }
                 }
             )
@@ -115,7 +137,12 @@ fun RoomDetailScreen(
                         AsyncImage(
                             model = images[page],
                             contentDescription = "Imagen ${page + 1}",
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clickable {
+                                    selectedImageUrl = images[page]
+                                    showImageModal = true
+                                },
                             contentScale = ContentScale.Crop
                         )
                     }
