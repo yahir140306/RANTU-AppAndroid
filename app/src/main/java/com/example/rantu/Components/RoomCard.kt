@@ -183,29 +183,24 @@ fun DownloadableRoomCard(
 // Función para guardar bitmap
 fun saveBitmapToGallery(context: Context, bitmap: Bitmap, filename: String): Boolean {
     return try {
-        val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-        val rantuDir = File(picturesDir, "RANTU")
-        
-        if (!rantuDir.exists()) {
-            rantuDir.mkdirs()
+        val resolver = context.contentResolver
+        val contentValues = android.content.ContentValues().apply {
+            put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, filename)
+            put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/png")
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/RANTU")
+            }
         }
         
-        val file = File(rantuDir, filename)
-        val outputStream = FileOutputStream(file)
-        
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-        outputStream.flush()
-        outputStream.close()
-        
-        // Notificar a la galería
-        android.media.MediaScannerConnection.scanFile(
-            context,
-            arrayOf(file.absolutePath),
-            arrayOf("image/png"),
-            null
-        )
-        
-        true
+        val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        if (uri != null) {
+            resolver.openOutputStream(uri)?.use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            }
+            true
+        } else {
+            false
+        }
     } catch (e: Exception) {
         e.printStackTrace()
         false
