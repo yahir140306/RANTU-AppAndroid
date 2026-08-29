@@ -1,3 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RANTU</string>
+    <string name="info_basica">📋 Información Básica</string>
+    <string name="detalles_cuarto">📝 Detalles del Cuarto</string>
+    <string name="imagenes_cuarto">📷 Imágenes del Cuarto</string>
+    <string name="ubicacion_mapa">📍 Ubicación en el Mapa</string>
+    <string name="guardar">Guardar</string>
+    <string name="publicar">Publicar</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="error_titulo">El título es requerido</string>
+    <string name="error_descripcion">La descripción es requerida</string>
 </resources>

@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.rantu.di.ViewModelFactory
 import coil.compose.AsyncImage
 import com.example.rantu.ui.AddRoomViewModel
 
@@ -37,7 +38,7 @@ fun AddRoomScreen(
     onBack: () -> Unit,
     onSuccess: () -> Unit,
     onOpenLocationPicker: (Double?, Double?, (Double, Double) -> Unit) -> Unit = { _, _, _ -> },
-    addRoomViewModel: AddRoomViewModel = viewModel()
+    addRoomViewModel: AddRoomViewModel = viewModel(factory = ViewModelFactory)
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()

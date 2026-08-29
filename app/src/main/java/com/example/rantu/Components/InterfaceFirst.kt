@@ -19,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.rantu.di.ViewModelFactory
 import com.example.rantu.data.Room
 import com.example.rantu.ui.RoomViewModel
 import java.net.URLEncoder
@@ -37,7 +38,7 @@ fun ViewFirstPreview() {
 
 @Composable
 fun ViewFist(
-    roomViewModel: RoomViewModel = viewModel(),
+    roomViewModel: RoomViewModel = viewModel(factory = ViewModelFactory),
     isLoggedIn: Boolean = false,
     userEmail: String? = null,
     onLoginClick: () -> Unit = {},

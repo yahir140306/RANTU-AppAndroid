@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.rantu.di.ViewModelFactory
 import com.example.rantu.ui.LoginState
 import com.example.rantu.ui.LoginViewModel
 
@@ -29,7 +30,7 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onBack: () -> Unit,
     onRegisterClick: () -> Unit = {},
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = viewModel(factory = ViewModelFactory)
 ) {
     var email by remember { mutableStateOf("") }
     var emailError by remember { mutableStateOf<String?>(null) }

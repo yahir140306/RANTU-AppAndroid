@@ -8,6 +8,8 @@ import android.media.ExifInterface
 import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import com.example.rantu.utils.RoomFormValidator
+
 import androidx.lifecycle.viewModelScope
 import com.example.rantu.data.RoomInsert
 import com.example.rantu.data.RoomRepository
@@ -21,8 +23,8 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
-class AddRoomViewModel : ViewModel() {
-    private val repository = RoomRepository()
+class AddRoomViewModel(private val repository: RoomRepository) : ViewModel() {
+    
 
     // Estados del formulario
     val titulo = mutableStateOf("")
@@ -51,21 +53,16 @@ class AddRoomViewModel : ViewModel() {
     
     // Validaciones
     fun validateForm(): String? {
-        return when {
-            titulo.value.isBlank() -> "El título es requerido"
-            descripcion.value.isBlank() -> "La descripción es requerida"
-            precio.value.isBlank() -> "El precio es requerido"
-            precio.value.toDoubleOrNull() == null -> "El precio debe ser un número válido"
-            precio.value.toDouble() <= 0 -> "El precio debe ser mayor a 0"
-            celular.value.isBlank() -> "El número de celular es requerido"
-            celular.value.length < 10 -> "El número de celular debe tener al menos 10 dígitos"
-            caracteristicas.value.isBlank() -> "Las características son requeridas"
-            caracteristicas.value.length < 20 -> "Las características deben tener al menos 20 caracteres"
-            ubicacion.value.isBlank() -> "La ubicación es requerida"
-            ubicacion.value.length < 10 -> "La ubicación debe tener al menos 10 caracteres"
-            imagen1Uri.value == null -> "Debes subir al menos una imagen"
-            else -> null
-        }
+        return RoomFormValidator.validateForm(
+            titulo = titulo.value,
+            descripcion = descripcion.value,
+            precio = precio.value,
+            celular = celular.value,
+            caracteristicas = caracteristicas.value,
+            ubicacion = ubicacion.value,
+            hasImages = imagen1Uri.value != null
+        )
+    }
     }
     
     // Comprimir imagen y eliminar metadatos EXIF

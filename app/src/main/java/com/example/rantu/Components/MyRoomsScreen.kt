@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.rantu.di.ViewModelFactory
 import coil.compose.AsyncImage
 import com.example.rantu.data.Room
 import com.example.rantu.ui.UserRoomsViewModel
@@ -36,7 +37,7 @@ fun MyRoomsScreen(
     onBack: () -> Unit,
     onAddRoom: () -> Unit = {},
     onEditRoom: (Room) -> Unit = {},
-    userRoomsViewModel: UserRoomsViewModel = viewModel(),
+    userRoomsViewModel: UserRoomsViewModel = viewModel(factory = ViewModelFactory),
     onRoomUpdated: () -> Unit = {}
 ) {
     val rooms = userRoomsViewModel.rooms.value

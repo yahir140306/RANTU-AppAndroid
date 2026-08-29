@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.rantu.di.ViewModelFactory
 import coil.compose.AsyncImage
 import com.example.rantu.data.Comment
 import com.example.rantu.data.Room
@@ -52,7 +53,7 @@ import kotlinx.coroutines.launch
 fun RoomDetailScreen(
     room: Room,
     onBack: () -> Unit,
-    viewModel: RoomDetailViewModel = viewModel()
+    viewModel: RoomDetailViewModel = viewModel(factory = ViewModelFactory)
 ) {
     val context = LocalContext.current
     val comments = viewModel.comments.value

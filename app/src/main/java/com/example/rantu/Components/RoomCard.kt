@@ -1,233 +1,136 @@
 package com.example.rantu.Components
 
-import android.content.Context
-import android.graphics.Bitmap
-import android.os.Environment
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.rantu.data.Room
-import java.io.File
-import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
+import com.example.rantu.R// Asegúrate de tener una imagen de ejemplo en res/drawable
+
+// Componente para la Barra Superior
+@OptIn(ExperimentalMaterial3Api::class)
 
 @Composable
-fun DownloadableRoomCard(
-    room: Room,
-    modifier: Modifier = Modifier
+
+fun RoomCard(
+    isAvailable: Boolean,
+    imageUrl: String,
+    title: String,
+    description: String,
+    price: String,
+    roomId: Int? = null,
+    latitude: Double? = null,
+    longitude: Double? = null,
+    onViewMoreClick: () -> Unit,
+    onShareClick: ((Int) -> Unit)? = null
 ) {
     Card(
-        modifier = modifier
-            .width(400.dp)
-            .height(500.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(8.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        //colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2C))
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF667EEA),
-                            Color(0xFF764BA2)
-                        )
-                    )
+        Column {
+            Box {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = title,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
+                    contentScale = ContentScale.Crop
                 )
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Header
-                Column {
-                    Text(
-                        text = "RANTU",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "Encuentra tu espacio ideal",
-                        fontSize = 14.sp,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                }
-                
-                // Imagen del cuarto
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    AsyncImage(
-                        model = room.resolvedImageUrl(),
-                        contentDescription = room.title,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-                
-                // Información del cuarto
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = 0.95f))
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = room.title ?: "Cuarto disponible",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1F2937),
-                        maxLines = 2
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Row(
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        Text(
-                            text = "$${room.price?.toInt() ?: 0}",
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF3B82F6)
-                        )
-                        Text(
-                            text = "/mes",
-                            fontSize = 16.sp,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    if (!room.ubicacion.isNullOrBlank()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "📍",
-                                fontSize = 16.sp
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = room.ubicacion ?: "",
-                                fontSize = 14.sp,
-                                color = Color.Gray,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                    
-                    if (!room.caracteristicas.isNullOrBlank()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "✨",
-                                fontSize = 16.sp
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = room.caracteristicas ?: "",
-                                fontSize = 14.sp,
-                                color = Color.Gray,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                }
-                
-                // Footer
+
+                // Mostrar chip de estado (disponible o no disponible)
+                StatusChip(
+                    text = if (isAvailable) "Disponible" else "No disponible",
+                    isAvailable = isAvailable
+                )
+            }
+
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(description, fontSize = 14.sp, color = Color.Black)
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
+                    Column {
+                        Text(price, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6))
+                        Text("por mes", fontSize = 12.sp, color = Color.Black)
+                    }
                     
-                    Text(
-                        text = "Escanea para más info →",
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Botón compartir (si está disponible)
+                        if (onShareClick != null && roomId != null) {
+                            IconButton(
+                                onClick = { onShareClick(roomId) },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    painter = androidx.compose.ui.res.painterResource(
+                                        id = android.R.drawable.ic_menu_share
+                                    ),
+                                    contentDescription = "Compartir",
+                                    tint = Color(0xFF6B7280)
+                                )
+                            }
+                        }
+                        
+                        // Botón Ver más
+                        Button(
+                            onClick = onViewMoreClick,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Ver más →")
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-// Función para guardar bitmap
-fun saveBitmapToGallery(context: Context, bitmap: Bitmap, filename: String): Boolean {
-    return try {
-        var success = false
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            val resolver = context.contentResolver
-            val contentValues = android.content.ContentValues().apply {
-                put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, filename)
-                put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/RANTU")
-                put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
-            }
-            val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-            if (uri != null) {
-                resolver.openOutputStream(uri)?.use { outputStream ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                }
-                contentValues.clear()
-                contentValues.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
-                resolver.update(uri, contentValues, null, null)
-                success = true
-            }
-        }
-        
-        // Fallback definitivo si MediaStore falla (o si es API <= 28)
-        if (!success) {
-            val picturesDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES)
-            val rantuDir = java.io.File(picturesDir, "RANTU")
-            if (!rantuDir.exists()) rantuDir.mkdirs()
-            
-            val file = java.io.File(rantuDir, filename)
-            java.io.FileOutputStream(file).use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-            }
-            
-            // Notificar a la galería
-            android.media.MediaScannerConnection.scanFile(
-                context,
-                arrayOf(file.absolutePath),
-                arrayOf("image/png"),
-                null
-            )
-            success = true
-        }
-        
-        return success
-    } catch (e: Exception) {
-        e.printStackTrace()
-        return false
-    }
-}
+// Vista previa del mapa con OSMDroid

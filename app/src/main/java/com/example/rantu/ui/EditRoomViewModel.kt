@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import com.example.rantu.utils.RoomFormValidator
+
 import androidx.lifecycle.viewModelScope
 import com.example.rantu.data.Room
 import com.example.rantu.data.RoomRepository
@@ -15,8 +17,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class EditRoomViewModel : ViewModel() {
-    private val repository = RoomRepository()
+class EditRoomViewModel(private val repository: RoomRepository) : ViewModel() {
+    
 
     // Estados del formulario
     val titulo = mutableStateOf("")
@@ -95,20 +97,16 @@ class EditRoomViewModel : ViewModel() {
     
     // Validaciones
     fun validateForm(): String? {
-        return when {
-            titulo.value.isBlank() -> "El título es requerido"
-            descripcion.value.isBlank() -> "La descripción es requerida"
-            precio.value.isBlank() -> "El precio es requerido"
-            precio.value.toDoubleOrNull() == null -> "El precio debe ser un número válido"
-            precio.value.toDouble() <= 0 -> "El precio debe ser mayor a 0"
-            celular.value.isBlank() -> "El número de celular es requerido"
-            celular.value.length < 10 -> "El número de celular debe tener al menos 10 dígitos"
-            caracteristicas.value.isBlank() -> "Las características son requeridas"
-            caracteristicas.value.length < 20 -> "Las características deben tener al menos 20 caracteres"
-            ubicacion.value.isBlank() -> "La ubicación es requerida"
-            ubicacion.value.length < 10 -> "La ubicación debe tener al menos 10 caracteres"
-            else -> null
-        }
+        return RoomFormValidator.validateForm(
+            titulo = titulo.value,
+            descripcion = descripcion.value,
+            precio = precio.value,
+            celular = celular.value,
+            caracteristicas = caracteristicas.value,
+            ubicacion = ubicacion.value,
+            hasImages = imagen1UrlExisting.value != null || imagen1UriNew.value != null
+        )
+    }
     }
     
     // Subir imagen a Supabase Storage

@@ -73,3 +73,51 @@ fun RoomFormBasicInfo(
         }
     }
 }
+
+@Composable
+fun RoomFormDetails(
+    caracteristicas: String,
+    onCaracteristicasChange: (String) -> Unit,
+    celular: String,
+    onCelularChange: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "📝 Detalles del Cuarto",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
+            OutlinedTextField(
+                value = caracteristicas,
+                onValueChange = onCaracteristicasChange,
+                label = { Text("Características *") },
+                placeholder = { Text("Baño privado, WiFi, cocina compartida...") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                maxLines = 4
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            OutlinedTextField(
+                value = celular,
+                onValueChange = onCelularChange,
+                label = { Text("Número de Celular (WhatsApp) *") },
+                placeholder = { Text("3001234567") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                singleLine = true
+            )
+        }
+    }
+}

@@ -8,8 +8,8 @@ import com.example.rantu.data.RoomRepository
 import kotlinx.coroutines.launch
 
 // El ViewModel sobrevive a cambios de configuración como rotar la pantalla
-class RoomViewModel : ViewModel() {
-    private val repository = RoomRepository()
+class RoomViewModel(private val repository: RoomRepository) : ViewModel() {
+    
 
     // Estado para la lista de cuartos original (sin filtrar)
     private val allRooms = mutableStateOf<List<Room>>(emptyList())
