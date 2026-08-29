@@ -2,6 +2,7 @@ package com.example.rantu.data
 
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.headers
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
@@ -10,10 +11,17 @@ import kotlinx.serialization.json.Json
 class RoomRepository {
 
     // Obtiene todos los cuartos desde la tabla `cuartos` de PostgREST
-    suspend fun getAllRooms(): List<Room> = withContext(Dispatchers.IO) {
+    suspend fun getAllRooms(page: Int = 1, limit: Int = 10): List<Room> = withContext(Dispatchers.IO) {
         try {
-            val url = "${SupabaseClient.postgrestUrl}/cuartos"
-            val text: String = SupabaseClient.client.get(url).body()
+            val offset = (page - 1) * limit
+            val url = "${SupabaseClient.postgrestUrl}/cuartos?activo=eq.true&order=created_at.desc"
+            
+            // PostgREST Range header for pagination: Range: 0-9
+            val text: String = SupabaseClient.client.get(url) {
+                headers {
+                    append("Range", "$offset-${offset + limit - 1}")
+                }
+            }.body()
 
             val json = Json { ignoreUnknownKeys = true }
             val rooms = json.decodeFromString<List<Room>>(text)

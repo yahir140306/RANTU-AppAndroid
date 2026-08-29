@@ -1,5 +1,6 @@
 package com.example.rantu.ui
 
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,104 +8,58 @@ import com.example.rantu.data.Room
 import com.example.rantu.data.RoomRepository
 import kotlinx.coroutines.launch
 
-// El ViewModel sobrevive a cambios de configuración como rotar la pantalla
 class RoomViewModel(private val repository: RoomRepository) : ViewModel() {
-    
+    private val _rooms = mutableStateOf<List<Room>>(emptyList())
+    val rooms: State<List<Room>> = _rooms
 
-    // Estado para la lista de cuartos original (sin filtrar)
-    private val allRooms = mutableStateOf<List<Room>>(emptyList())
-    
-    // Estado para la lista de cuartos mostrados (puede estar filtrada)
-    val rooms = mutableStateOf<List<Room>>(emptyList())
-    
-    // Total de cuartos (sin filtrar) para mostrar en contador
-    val totalRoomsCount: Int
-        get() = allRooms.value.size
-    
-    // Estado para saber si se están cargando los datos
-    val isLoading = mutableStateOf(true)
-    
-    // Estado para guardar un mensaje de error legible para el usuario
-    val error = mutableStateOf<String?>(null)
-    
-    // Estados para el filtro de precio
-    val minPrice = mutableStateOf("")
-    val maxPrice = mutableStateOf("")
-    val soloDisponibles = mutableStateOf(true)
-    val isFilterActive = mutableStateOf(false)
+    private val _isLoading = mutableStateOf(false)
+    val isLoading: State<Boolean> = _isLoading
+
+    private val _error = mutableStateOf<String?>(null)
+    val error: State<String?> = _error
+
+    private var currentPage = 1
+    private var isLastPage = false
+    private val limit = 10
 
     init {
-        // Se llama al crear el ViewModel
         fetchRooms()
     }
 
-    // Hacemos pública la función para que la UI pueda reintentar
     fun fetchRooms() {
-        // viewModelScope es un coroutine scope ligado al ciclo de vida del ViewModel
-        viewModelScope.launch {
-            isLoading.value = true
-            error.value = null
-            try {
-                val roomList = repository.getAllRooms()
-                allRooms.value = roomList
-                applyFilter()
-            } catch (e: Exception) {
-                // Mapear errores comunes a mensajes legibles para el usuario
-                val message = when (e) {
-                    is java.net.UnknownHostException -> "Sin conexión. Revisa tu conexión a Internet."
-                    is java.net.SocketTimeoutException -> "Tiempo de espera agotado al conectarse al servidor."
-                    is io.ktor.client.plugins.ResponseException -> {
-                        val status = e.response.status.value
-                        "Error del servidor (HTTP $status). Intenta más tarde."
-                    }
-                    else -> e.message ?: "Error desconocido al cargar cuartos"
-                }
+        currentPage = 1
+        isLastPage = false
+        _rooms.value = emptyList()
+        loadMore()
+    }
 
-                // Guardar mensaje y limpiar lista
-                error.value = message
-                rooms.value = emptyList()
-                println("[RoomViewModel] Error fetching rooms: ${e}")
+    fun loadMore() {
+        if (_isLoading.value || isLastPage) return
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+            try {
+                val newRooms = repository.getAllRooms(page = currentPage, limit = limit)
+                if (newRooms.size < limit) {
+                    isLastPage = true
+                }
+                
+                val currentRooms = _rooms.value.toMutableList()
+                newRooms.forEach { room ->
+                    if (currentRooms.none { it.id == room.id }) {
+                        currentRooms.add(room)
+                    }
+                }
+                
+                _rooms.value = currentRooms
+                currentPage++
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _error.value = e.message ?: "Error desconocido"
             } finally {
-                isLoading.value = false
+                _isLoading.value = false
             }
         }
-    }
-    
-    // Aplicar el filtro de precio
-    fun applyFilter() {
-        val min = minPrice.value.toDoubleOrNull() ?: 0.0
-        val max = maxPrice.value.toDoubleOrNull() ?: Double.MAX_VALUE
-        
-        rooms.value = if (minPrice.value.isEmpty() && maxPrice.value.isEmpty() && soloDisponibles.value) {
-            isFilterActive.value = false
-            allRooms.value
-        } else {
-            isFilterActive.value = true
-            allRooms.value.filter { room ->
-                val price = room.price ?: 0.0
-                val cumplePrecio = price >= min && price <= max
-                val cumpleDisponibilidad = !soloDisponibles.value || (room.isAvailable == true)
-                cumplePrecio && cumpleDisponibilidad
-            }
-        }
-    }
-    
-    // Limpiar el filtro
-    fun clearFilter() {
-        minPrice.value = ""
-        maxPrice.value = ""
-        soloDisponibles.value = true
-        isFilterActive.value = false
-        rooms.value = allRooms.value
-    }
-    
-    // Actualizar precio mínimo
-    fun updateMinPrice(value: String) {
-        minPrice.value = value
-    }
-    
-    // Actualizar precio máximo
-    fun updateMaxPrice(value: String) {
-        maxPrice.value = value
     }
 }
