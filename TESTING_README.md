@@ -1,38 +1,41 @@
-# Guía de Testing para RANTU Android 🧪
+# 🧪 Guía Oficial de Testing - RANTU Android
 
-Esta guía detalla cómo está configurado el entorno de pruebas en la aplicación Android de RANTU. Utilizar pruebas asegura que cuando agregamos pantallas nuevas o modificamos componentes de Jetpack Compose, no rompemos lo que ya funciona.
+Esta guía detalla la implementación de pruebas automatizadas y la arquitectura testeable (Clean Architecture) de la aplicación Android.
 
-## Frameworks de Testing Utilizados
+## 🛠️ Herramientas Utilizadas
+- **JUnit 4**: Framework estándar para ejecución de pruebas en la JVM (Java Virtual Machine).
+- **MockK**: Framework de mocking moderno para Kotlin.
+- **Coroutines Test**: Utilidades para probar funciones `suspend` y flujos asíncronos (`StateFlow`).
 
-1. **JUnit 4 / JUnit 5**: Para pruebas unitarias (Unit Tests). Se usa para probar lógica pura de Kotlin sin necesidad de un dispositivo o emulador (ej: Validaciones de ViewModel, matemáticas, formateos).
-2. **Espresso / Compose Test Rule**: Para pruebas de interfaz de usuario (UI Tests / Instrumented Tests). Se usan para asegurar que los botones se pueden clickear, las pantallas muestran los cuartos correctamente, etc. (Requieren un emulador o dispositivo físico).
+## 📂 ¿Dónde están las pruebas?
+Las pruebas unitarias viven en la carpeta del código fuente de testing local:
+`app/src/test/java/com/example/rantu/...`
 
-## Estructura de las Pruebas
+## 🚀 Ejecutar las Pruebas
 
-Android Studio divide las pruebas en dos carpetas dentro de `app/src/`:
+Tienes dos opciones principales para ejecutar los tests sin necesidad de un dispositivo físico o emulador:
 
-1. `test/java/com/example/rantu/`
-   - **Pruebas Unitarias Locales**: Son rapidísimas.
-   - Aquí probamos funciones aisladas (ViewModels, Utils).
-   
-2. `androidTest/java/com/example/rantu/`
-   - **Pruebas Instrumentadas (UI)**: Son más lentas pero prueban la app real.
-   - Aquí probamos la navegación de Jetpack Compose y la UI.
+**Opción 1: Interfaz Gráfica (Android Studio)**
+1. Abre el panel "Project" (lado izquierdo).
+2. Expande `app/src/test/java/com/example/rantu`.
+3. Haz clic derecho sobre la carpeta entera o un archivo de prueba específico.
+4. Selecciona **"Run Tests in..."** o haz clic en los íconos verdes de "Play" al lado del código de prueba.
 
-## Comandos para Correr las Pruebas
+**Opción 2: Línea de Comandos (Terminal)**
+```bash
+./gradlew testDebugUnitTest
+```
 
-Desde la terminal en Android Studio o usando la línea de comandos de Gradle (`./gradlew`):
+## 📝 Casos de Prueba Implementados
 
-- **Correr solo pruebas unitarias rápidas:**
-  `./gradlew testDebugUnitTest`
+1. **`RoomDetailViewModelTest.kt` (Pruebas Asíncronas y de Inyección)**
+   - **Simulación de Repositorio (Mocking):** Usa `MockK` para simular llamadas de red lentas.
+   - **Verificación de Estados:** Comprueba que al iniciar la petición el estado `isLoading` sea `true`, y al finalizar se asigne correctamente la data a `room.value`.
+   - **Manejo de Errores:** Simula una caída del servidor (Exception) y verifica que la interfaz reciba un `errorMsg` amigable en lugar de cerrarse abruptamente (Crash).
 
-- **Correr pruebas de UI (requiere emulador encendido):**
-  `./gradlew connectedAndroidTest`
+2. **`RoomFormValidatorTest.kt` (Pruebas de Lógica de Negocio)**
+   - **Boundary Testing:** Se prueban las restricciones de longitud (por ejemplo, celular con menos de 10 dígitos o características cortas).
+   - **Validación Limpia:** Confirma que si todos los datos son válidos, el validador retorne nulo (ausencia de errores).
 
-## Buenas Prácticas al crear Tests
-1. **Convención de Nombres**: Nombrar las pruebas detallando qué prueban (ej. `fun alDarClicEnFavorito_elIconoCambiaDeColor()`).
-2. **Preparar, Actuar, Verificar (Arrange, Act, Assert)**: Divide tu prueba en 3 pasos lógicos.
-3. **No testear librerías**: Si usas `Coil` para imágenes o `Retrofit/Supabase` para red, no pruebes si la librería funciona, usa *Mocks* para simular las respuestas.
-
----
-*Con esto, RANTU está listo para crecer de forma segura y robusta. Siéntete libre de ejecutar los tests cada vez que agregues un gran cambio.*
+## 🛡️ Beneficios para el Proyecto
+Gracias a que eliminamos el instanciamiento rígido de las bases de datos (implementamos **Dependency Injection**) y separamos la lógica compleja a objetos puros, ahora Android es completamente testeable. Cualquier estudiante en el futuro podrá modificar los ViewModels teniendo la confianza de que las pruebas automatizadas le avisarán si rompe algo.
