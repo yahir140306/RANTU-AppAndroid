@@ -129,7 +129,7 @@ class EditRoomViewModel(private val repository: RoomRepository) : ViewModel() {
                 val timestamp = System.currentTimeMillis()
                 val randomStr = (1..6).map { ('a'..'z').random() }.joinToString("")
                 val extension = when {
-                    uri.toString().contains(".jpg", ignoreCase = true) -> "jpg"
+                    uri.toString().contains(".webp", ignoreCase = true) -> "jpg"
                     uri.toString().contains(".jpeg", ignoreCase = true) -> "jpeg"
                     uri.toString().contains(".png", ignoreCase = true) -> "png"
                     else -> "jpg"

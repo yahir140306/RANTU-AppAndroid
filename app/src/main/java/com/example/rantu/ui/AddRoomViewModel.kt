@@ -120,7 +120,13 @@ class AddRoomViewModel(private val repository: RoomRepository) : ViewModel() {
                 
                 do {
                     val outputStream = ByteArrayOutputStream()
-                    scaledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+                    val format = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                        android.graphics.Bitmap.CompressFormat.WEBP_LOSSY
+                    } else {
+                        @Suppress("DEPRECATION")
+                        android.graphics.Bitmap.CompressFormat.WEBP
+                    }
+                    scaledBitmap.compress(format, quality, outputStream)
                     compressedBytes = outputStream.toByteArray()
                     outputStream.close()
                     
@@ -166,7 +172,7 @@ class AddRoomViewModel(private val repository: RoomRepository) : ViewModel() {
                 // Generar nombre único
                 val timestamp = System.currentTimeMillis()
                 val randomStr = (1..6).map { ('a'..'z').random() }.joinToString("")
-                val fileName = "${imageName}_${timestamp}_${randomStr}.jpg"
+                val fileName = "${imageName}_${timestamp}_${randomStr}.webp"
                 
                 // Subir a Supabase Storage
                 val bucket = SupabaseClient.client.storage.from("cuartos-images")
