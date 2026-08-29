@@ -8,8 +8,9 @@ import com.example.rantu.data.CommentStatistics
 import com.example.rantu.data.RoomRepository
 import kotlinx.coroutines.launch
 
-class RoomDetailViewModel : ViewModel() {
-    private val repository = RoomRepository()
+class RoomDetailViewModel(
+    private val repository: RoomRepository = RoomRepository()
+) : ViewModel() {
 
     val comments = mutableStateOf<List<Comment>>(emptyList())
     val statistics = mutableStateOf<CommentStatistics?>(null)
