@@ -239,210 +239,24 @@ fun EditRoomScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // Detalles
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Text(
-                            text = "📝 Detalles del Cuarto",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                        
-                        // Características
-                        OutlinedTextField(
-                            value = editRoomViewModel.caracteristicas.value,
-                            onValueChange = { editRoomViewModel.caracteristicas.value = it },
-                            label = { Text("Características *") },
-                            placeholder = { Text("Baño privado, WiFi, cocina compartida...") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp),
-                            maxLines = 4
-                        )
-                        Text(
-                            text = "Mínimo 20 caracteres",
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                        )
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        // Ubicación
-                        OutlinedTextField(
-                            value = editRoomViewModel.ubicacion.value,
-                            onValueChange = { editRoomViewModel.ubicacion.value = it },
-                            label = { Text("Ubicación Específica *") },
-                            placeholder = { Text("Colonia, referencias cercanas, accesos...") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp),
-                            maxLines = 4
-                        )
-                        Text(
-                            text = "Mínimo 10 caracteres",
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Ubicación en mapa
-                        Text(
-                            text = "📍 Ubicación en el Mapa",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        
-                        if (editRoomViewModel.latitud.value != null && editRoomViewModel.longitud.value != null) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = Color(0xFFE8F5E9)
-                                )
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text(
-                                            text = "✅ Ubicación seleccionada",
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color(0xFF2E7D32)
-                                        )
-                                        Text(
-                                            text = "${"%.6f".format(editRoomViewModel.latitud.value)}, ${"%.6f".format(editRoomViewModel.longitud.value)}",
-                                            fontSize = 12.sp,
-                                            color = Color.Gray
-                                        )
-                                    }
-                                    IconButton(
-                                        onClick = {
-                                            editRoomViewModel.latitud.value = null
-                                            editRoomViewModel.longitud.value = null
-                                        }
-                                    ) {
-                                        Icon(Icons.Default.Close, "Quitar ubicación", tint = Color(0xFF2E7D32))
-                                    }
-                                }
-                            }
-                        }
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Button(
-                            onClick = {
-                                onOpenLocationPicker(
-                                    editRoomViewModel.latitud.value,
-                                    editRoomViewModel.longitud.value
-                                ) { lat, lng ->
-                                    editRoomViewModel.latitud.value = lat
-                                    editRoomViewModel.longitud.value = lng
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF667EEA)
-                            )
-                        ) {
-                            Icon(
-                                imageVector = if (editRoomViewModel.latitud.value != null) Icons.Default.Edit else Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                if (editRoomViewModel.latitud.value != null) 
-                                    "Cambiar Ubicación en Mapa" 
-                                else 
-                                    "Agregar Ubicación en Mapa"
-                            )
-                        }
-                        
-                        Text(
-                            text = "Opcional: Ayuda a los interesados a encontrar tu cuarto más fácilmente",
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-                }
+                RoomFormDetails(
+                    caracteristicas = editRoomViewModel.caracteristicas.value,
+                    onCaracteristicasChange = { editRoomViewModel.caracteristicas.value = it },
+                    celular = editRoomViewModel.celular.value,
+                    onCelularChange = { editRoomViewModel.celular.value = it }
+                )
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // Imágenes
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Text(
-                            text = "📷 Imágenes del Cuarto",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        Text(
-                            text = "Solo sube imágenes si quieres cambiar las actuales",
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                        
-                        // Imagen 1
-                        EditableImagePicker(
-                            label = "Imagen principal",
-                            existingUrl = editRoomViewModel.imagen1UrlExisting.value,
-                            newUri = editRoomViewModel.imagen1UriNew.value,
-                            onPickImage = { launcher1.launch("image/*") },
-                            onRemoveNewImage = { editRoomViewModel.imagen1UriNew.value = null }
-                        )
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        // Imagen 2
-                        EditableImagePicker(
-                            label = "Imagen adicional",
-                            existingUrl = editRoomViewModel.imagen2UrlExisting.value,
-                            newUri = editRoomViewModel.imagen2UriNew.value,
-                            onPickImage = { launcher2.launch("image/*") },
-                            onRemoveNewImage = { editRoomViewModel.imagen2UriNew.value = null }
-                        )
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        // Imagen 3
-                        EditableImagePicker(
-                            label = "Imagen adicional",
-                            existingUrl = editRoomViewModel.imagen3UrlExisting.value,
-                            newUri = editRoomViewModel.imagen3UriNew.value,
-                            onPickImage = { launcher3.launch("image/*") },
-                            onRemoveNewImage = { editRoomViewModel.imagen3UriNew.value = null }
-                        )
-                        
-                        Text(
-                            text = "Formatos permitidos: JPG, PNG. Tamaño máximo: 5MB por imagen.",
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-                }
+                RoomImageUploader(
+                    imagen1Uri = editRoomViewModel.imagen1UriNew.value,
+                    imagen2Uri = editRoomViewModel.imagen2UriNew.value,
+                    imagen3Uri = editRoomViewModel.imagen3UriNew.value,
+                    onImage1Click = { launcher1.launch("image/*") },
+                    onImage2Click = { launcher2.launch("image/*") },
+                    onImage3Click = { launcher3.launch("image/*") }
+                )
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 

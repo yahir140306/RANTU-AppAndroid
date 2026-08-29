@@ -121,3 +121,101 @@ fun RoomFormDetails(
         }
     }
 }
+
+import android.net.Uri
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import coil.compose.AsyncImage
+
+@Composable
+fun RoomImageUploader(
+    imagen1Uri: Uri?,
+    imagen2Uri: Uri?,
+    imagen3Uri: Uri?,
+    onImage1Click: () -> Unit,
+    onImage2Click: () -> Unit,
+    onImage3Click: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "📷 Imágenes del Cuarto",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Text(
+                text = "Sube hasta 3 imágenes. La primera será la principal.",
+                fontSize = 12.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ImagePickerBox(
+                    uri = imagen1Uri,
+                    onClick = onImage1Click,
+                    modifier = Modifier.weight(1f).aspectRatio(1f),
+                    label = "Principal"
+                )
+                ImagePickerBox(
+                    uri = imagen2Uri,
+                    onClick = onImage2Click,
+                    modifier = Modifier.weight(1f).aspectRatio(1f),
+                    label = "Foto 2"
+                )
+                ImagePickerBox(
+                    uri = imagen3Uri,
+                    onClick = onImage3Click,
+                    modifier = Modifier.weight(1f).aspectRatio(1f),
+                    label = "Foto 3"
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ImagePickerBox(
+    uri: Uri?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    label: String
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFFF3F4F6))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        if (uri != null) {
+            AsyncImage(
+                model = uri,
+                contentDescription = label,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+            )
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.Add,
+                    contentDescription = "Agregar $label",
+                    tint = Color.Gray
+                )
+                Text(label, fontSize = 10.sp, color = Color.Gray)
+            }
+        }
+    }
+}

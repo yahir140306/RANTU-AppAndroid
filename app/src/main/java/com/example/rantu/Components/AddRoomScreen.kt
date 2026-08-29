@@ -175,207 +175,24 @@ fun AddRoomScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Detalles
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "📝 Detalles del Cuarto",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                    
-                    // Características
-                    OutlinedTextField(
-                        value = addRoomViewModel.caracteristicas.value,
-                        onValueChange = { addRoomViewModel.caracteristicas.value = it },
-                        label = { Text("Características *") },
-                        placeholder = { Text("Baño privado, WiFi, cocina compartida...") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp),
-                        maxLines = 4
-                    )
-                    Text(
-                        text = "Mínimo 20 caracteres",
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Ubicación
-                    OutlinedTextField(
-                        value = addRoomViewModel.ubicacion.value,
-                        onValueChange = { addRoomViewModel.ubicacion.value = it },
-                        label = { Text("Ubicación Específica *") },
-                        placeholder = { Text("Colonia, referencias cercanas, accesos...") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp),
-                        maxLines = 4
-                    )
-                    Text(
-                        text = "Mínimo 10 caracteres",
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Ubicación en mapa
-                    Text(
-                        text = "📍 Ubicación en el Mapa",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    
-                    if (addRoomViewModel.latitud.value != null && addRoomViewModel.longitud.value != null) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFE8F5E9)
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(
-                                        text = "✅ Ubicación seleccionada",
-                                        fontWeight = FontWeight.Medium,
-                                        color = Color(0xFF2E7D32)
-                                    )
-                                    Text(
-                                        text = "${"%.6f".format(addRoomViewModel.latitud.value)}, ${"%.6f".format(addRoomViewModel.longitud.value)}",
-                                        fontSize = 12.sp,
-                                        color = Color.Gray
-                                    )
-                                }
-                                IconButton(
-                                    onClick = {
-                                        addRoomViewModel.latitud.value = null
-                                        addRoomViewModel.longitud.value = null
-                                    }
-                                ) {
-                                    Icon(Icons.Default.Close, "Quitar ubicación", tint = Color(0xFF2E7D32))
-                                }
-                            }
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Button(
-                        onClick = {
-                            onOpenLocationPicker(
-                                addRoomViewModel.latitud.value,
-                                addRoomViewModel.longitud.value
-                            ) { lat, lng ->
-                                addRoomViewModel.latitud.value = lat
-                                addRoomViewModel.longitud.value = lng
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF667EEA)
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            if (addRoomViewModel.latitud.value != null) 
-                                "Cambiar Ubicación en Mapa" 
-                            else 
-                                "Seleccionar Ubicación en Mapa"
-                        )
-                    }
-                    
-                    Text(
-                        text = "Opcional: Ayuda a los interesados a encontrar tu cuarto más fácilmente",
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
-            }
+            RoomFormDetails(
+                    caracteristicas = addRoomViewModel.caracteristicas.value,
+                    onCaracteristicasChange = { addRoomViewModel.caracteristicas.value = it },
+                    celular = addRoomViewModel.celular.value,
+                    onCelularChange = { addRoomViewModel.celular.value = it }
+                )
             
             Spacer(modifier = Modifier.height(16.dp))
             
             // Imágenes
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "📷 Imágenes del Cuarto",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    Text(
-                        text = "Sube hasta 3 imágenes. La primera será la imagen principal.",
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                    
-                    // Imagen 1 (requerida)
-                    ImagePicker(
-                        label = "Imagen principal *",
-                        uri = addRoomViewModel.imagen1Uri.value,
-                        onPickImage = { launcher1.launch("image/*") },
-                        onRemoveImage = { addRoomViewModel.imagen1Uri.value = null }
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Imagen 2
-                    ImagePicker(
-                        label = "Imagen adicional",
-                        uri = addRoomViewModel.imagen2Uri.value,
-                        onPickImage = { launcher2.launch("image/*") },
-                        onRemoveImage = { addRoomViewModel.imagen2Uri.value = null }
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Imagen 3
-                    ImagePicker(
-                        label = "Imagen adicional",
-                        uri = addRoomViewModel.imagen3Uri.value,
-                        onPickImage = { launcher3.launch("image/*") },
-                        onRemoveImage = { addRoomViewModel.imagen3Uri.value = null }
-                    )
-                    
-                    Text(
-                        text = "Formatos permitidos: JPG, PNG. Tamaño máximo: 5MB por imagen.",
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
-            }
+            RoomImageUploader(
+                    imagen1Uri = addRoomViewModel.imagen1Uri.value,
+                    imagen2Uri = addRoomViewModel.imagen2Uri.value,
+                    imagen3Uri = addRoomViewModel.imagen3Uri.value,
+                    onImage1Click = { launcher1.launch("image/*") },
+                    onImage2Click = { launcher2.launch("image/*") },
+                    onImage3Click = { launcher3.launch("image/*") }
+                )
             
             Spacer(modifier = Modifier.height(16.dp))
             

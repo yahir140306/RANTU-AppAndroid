@@ -31,11 +31,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
 
 @Composable
-fun ViewFirstPreview() {
-    ViewFist()
-}
 
-@Composable
 fun ViewFist(
     roomViewModel: RoomViewModel = viewModel(factory = ViewModelFactory),
     isLoggedIn: Boolean = false,
