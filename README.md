@@ -58,4 +58,4 @@ Las pruebas unitarias validan el comportamiento lógico sin necesidad de arranca
 5. Ejecutar (Sincronizar Gradle y compilar).
 
 ## 📜 Licencia y Autor
-Desarrollado como proyecto de Estadías.
+Desarrollado por el equipo de RANTU.
